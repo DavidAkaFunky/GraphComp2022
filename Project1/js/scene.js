@@ -4,6 +4,10 @@ var camera, scene, renderer;
 
 var geometry, material, mesh;
 
+var clock;
+
+var update_x = 0, update_y = 0, update_z = 0;
+
 function createScene() {
     'use strict';
 
@@ -24,9 +28,9 @@ function createCamera(){
 }
 
 function useFullViewCamera() {
-    camera.position.x = 50;
-    camera.position.y = 50;
-    camera.position.z = 50;
+    camera.position.x = 10;
+    camera.position.y = 10;
+    camera.position.z = 10;
 }
 
 function useTopViewCamera() {
@@ -57,10 +61,13 @@ function onKeyDown(e) {
         // Choose camera
         case 49:  // 1
             useFullViewCamera();
+            break;
         case 50:  // 2
             useTopViewCamera();
+            break;
         case 51:  // 3
             useSideViewCamera();
+            break;
 
 
         // Alternate between solid and wireframe material
@@ -77,9 +84,11 @@ function onKeyDown(e) {
         case 81:  // Q
         case 113: // q
             // TODO (Decrease v1 angle)
+            break;
 
         case 87:  // W
         case 119: // w
+            break;
             // TODO (Increase v1 angle)
            
 
@@ -87,42 +96,52 @@ function onKeyDown(e) {
         case 65:  // A
         case 97:  // a
             // TODO (Decrease v2 angle)
+            break;
 
         case 83:  // S
         case 115: // s
+            break;
             // TODO (Increase v2 angle)
         
 
         // Control v3 angle (tertiary branch)
         case 90:  // Z
         case 122: // z
+            break;
             // TODO (Decrease v3 angle)
         
         case 88:  // X
         case 120: // x
+            break;
             // TODO (Increase v3 angle)
 
             
         // Move along the axis (x, y and z)
-        case 37:  // Arrow up
-            // TODO (Increase y value)
+        case 37:  // Arrow left
+            update_x = -1;
+            break;
 
-        case 38:  // Arrow down
-            // TODO (Reduce y value)
+        case 38:  // Arrow up
+            update_y = 1;
+            break;
 
-        case 39:  // Arrow left
-            // TODO (Reduce x value)
+        case 39:  // Arrow right
+            update_x = 1;
+            break;
 
-        case 40:  // Arrow right
-            // TODO (Increase x value)
+        case 40:  // Arrow down
+            update_y = -1;
+            break;
 
         case 68:  // D
         case 100: // d
-            // TODO (Decrease z value)
+            update_z = 1;
+            break;
         
         case 67:  // C
         case 99:  // c
-            // TODO (Increase z value)
+            update_z = -1;
+            break;
     }
 }
 
@@ -141,6 +160,8 @@ function init() {
 
     createScene();
     createCamera();
+    
+    clock = new THREE.Clock();
 
     render();
 
@@ -151,6 +172,17 @@ function init() {
 function animate() {
     'use strict';
 
+    var delta_r = 10 * clock.getDelta();
+
+    // Update camera position
+    camera.position.x += update_x * delta_r;
+    camera.position.y += update_y * delta_r;
+    camera.position.z += update_z * delta_r;
+
+    // Update flags
+    update_x = 0;
+    update_y = 0;
+    update_z = 0;
     render();
 
     requestAnimationFrame(animate);
