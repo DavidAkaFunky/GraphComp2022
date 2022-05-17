@@ -81,14 +81,13 @@ function createScene() {
     object1 = new THREE.Object3D();
 
     object2 = new THREE.Object3D();
-    object2.position.set(22, 16.5, 0);
+    object2.position.set(22, 11, 0);
 
     object3 = new THREE.Object3D();
-    object3.position.set(0, -5.5, 0);
 
     createParallelepiped();
     createPyramid();
-    createCylinder(0, 0, 0, 2, 11, 0xFF00FF, object2);
+    createCylinder(0, 5.5, 0, 2, 11, 0xFF00FF, object2);
     for (let i = 0; i < 2; ++i){
         for (let j = 0; j < 2; ++j)
             createTorus(-7 + 14 * i, -10 + 10 * j, 0, 0x00FF00, object3);
@@ -103,15 +102,17 @@ function createScene() {
     scene.add(object1);
 }
 
-function useFrontViewCamera() {
-    'use strict';
-
+function createCamera() {
     camera = new THREE.OrthographicCamera(-window.innerWidth / 25,
                                           window.innerWidth / 25,
                                           window.innerHeight / 25,
                                           -window.innerHeight / 25,
-                                          -100,
-                                          100);
+                                          -1000,
+                                          1000);
+}
+
+function useFrontViewCamera() {
+    'use strict';
 
     camera.position.set(0, 27, 80);
     camera.lookAt(new THREE.Vector3(0, 27, 0));
@@ -119,30 +120,16 @@ function useFrontViewCamera() {
 
 function useTopViewCamera() {
     'use strict';
-
-    camera = new THREE.OrthographicCamera(-window.innerWidth / 25,
-                                          window.innerWidth / 25,
-                                          -window.innerHeight / 25,
-                                          window.innerHeight / 25,
-                                          -100,
-                                          100);
     
     camera.position.set(22, 80, 0);
     camera.lookAt(new THREE.Vector3(22, 0, 0));
-
 }
 
 function useSideViewCamera() {
     'use strict';
 
-    camera = new THREE.OrthographicCamera(-window.innerWidth / 25,
-                                          window.innerWidth / 25,
-                                          window.innerHeight / 25,
-                                          -window.innerHeight / 25,
-                                          -100,
-                                          100);
-
-    // TODO: Define camera position
+    camera.position.set(0, 27, 0);
+    camera.lookAt(new THREE.Vector3(-40, 27, 0));
 }
 
 function onResize() {
@@ -157,9 +144,9 @@ function onResize() {
 
 }
 
-// TODO: Allow multiple key press
 function onKeyDown(e) {
     'use strict';
+
     switch (e.keyCode) {
         
         // Choose camera (should it be given a flag to update the camera in animate()?)
@@ -252,6 +239,79 @@ function onKeyDown(e) {
             increaseZ = true;
             break;
     }
+
+}
+
+function onKeyUp(e) {
+    'use strict';
+
+    switch (e.keyCode) {
+        
+        // Control v1 angle (main branch)
+        case 81:  // Q
+        case 113: // q
+            decreaseV1 = false;
+            break;
+
+        case 87:  // W
+        case 119: // w
+            increaseV1 = false;
+            break;
+           
+
+        // Control v2 angle (secondary branch)
+        case 65:  // A
+        case 97:  // a
+            decreaseV2 = false;
+            break;
+
+        case 83:  // S
+        case 115: // s
+            increaseV2 = false;
+            break;
+        
+
+        // Control v3 angle (tertiary branch)
+        case 90:  // Z
+        case 122: // z
+            decreaseV3 = false;
+            break;
+        
+        case 88:  // X
+        case 120: // x
+            increaseV3 = false;
+            break;
+
+            
+        // Move object along the axis (x, y and z)
+        
+        case 37:  // Arrow left
+            decreaseX = false;
+            break;
+
+        case 39:  // Arrow right
+            increaseX = false;
+            break;
+
+        case 40:  // Arrow down
+            decreaseY = false;
+            break;
+
+        case 38:  // Arrow up
+            increaseY = false;
+            break;
+
+        case 68:  // D
+        case 100: // d
+            decreaseZ = false;
+            break;
+
+        case 67:  // C
+        case 99:  // c
+            increaseZ = false;
+            break;
+    }
+
 }
 
 function resetUpdateFlags(){
@@ -281,6 +341,7 @@ function init() {
 
     createScene();
     resetUpdateFlags();
+    createCamera();
     usingFrontViewCamera = true;
     wireframe = true;
 
@@ -289,6 +350,7 @@ function init() {
     render();
 
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
     window.addEventListener("resize", onResize);
 }
 
@@ -327,10 +389,6 @@ function animate() {
     object1.rotateY((increaseV1 - decreaseV1) * deltaV);
     object2.rotateY((increaseV2 - decreaseV2) * deltaV);
     object3.rotateX((increaseV3 - decreaseV3) * deltaV);
-
-
-    // Reset update flags
-    resetUpdateFlags();
 
     render();
 
