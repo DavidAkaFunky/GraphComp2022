@@ -10,7 +10,7 @@ var decreaseX, decreaseY, decreaseZ, decreaseV1, decreaseV2, decreaseV3;
 
 var increaseX, increaseY, increaseZ, increaseV1, increaseV2, increaseV3;
 
-var usingFullViewCamera, usingTopViewCamera, usingSideViewCamera;
+var usingFrontViewCamera, usingTopViewCamera, usingSideViewCamera;
 
 var wireframe;
 
@@ -44,7 +44,7 @@ function createPyramid(){
     object1.add(mesh);
 }
 
-function createTorus(x, y, z, color, objects){
+function createTorus(x, y, z, color, object){
     'use strict';
 
     material = new THREE.MeshBasicMaterial({color: color, wireframe: true })
@@ -54,11 +54,10 @@ function createTorus(x, y, z, color, objects){
     mesh.position.set(x, y, z);
     mesh.rotation.set(Math.PI / 2, 0, 0);
     
-    for (var i = 0; i < objects.length; ++i)
-        objects[i].add(mesh);
+    object.add(mesh);
 }
 
-function createCylinder(x, y, z, radius, height, color, objects){
+function createCylinder(x, y, z, radius, height, color, object){
     'use strict';
 
     material = new THREE.MeshBasicMaterial({color: color, wireframe: true })
@@ -67,8 +66,7 @@ function createCylinder(x, y, z, radius, height, color, objects){
 
     mesh.position.set(x, y, z);
     
-    for (var i = 0; i < objects.length; ++i)
-        objects[i].add(mesh);
+    object.add(mesh);
 }
 
 function createScene() {
@@ -81,51 +79,55 @@ function createScene() {
     scene.add(new THREE.AxisHelper(50));
 
     object1 = new THREE.Object3D();
+
     object2 = new THREE.Object3D();
+    object2.position.set(22, 16.5, 0);
+
     object3 = new THREE.Object3D();
+    object3.position.set(0, -5.5, 0);
 
     createParallelepiped();
     createPyramid();
-    createCylinder(22, 16.5, 0, 2, 11, 0xFF00FF, [object1, object2]);
+    createCylinder(0, 0, 0, 2, 11, 0xFF00FF, object2);
     for (let i = 0; i < 2; ++i){
         for (let j = 0; j < 2; ++j)
-            createTorus(15 + 14 * i, 1 + 10 * j, 0, 0x00FF00, [object1, object2, object3]);
-        createCylinder(11 + 14 * i, 6, 0, 1, 8, 0xFF0000, [object1, object2, object3]);
-        createCylinder(15 + 14 * i, 6, -4, 1, 8, 0xFF0000, [object1, object2, object3]);
-        createCylinder(15 + 14 * i, 6, 4, 1, 8, 0xFF0000, [object1, object2, object3]);
-        createCylinder(19 + 14 * i, 6, 0, 1, 8, 0xFF0000, [object1, object2, object3]);
+            createTorus(-7 + 14 * i, -10 + 10 * j, 0, 0x00FF00, object3);
+        createCylinder(-11 + 14 * i, -5, 0, 1, 8, 0xFF0000, object3);
+        createCylinder(-7 + 14 * i, -5, -4, 1, 8, 0xFF0000, object3);
+        createCylinder(-7 + 14 * i, -5, 4, 1, 8, 0xFF0000, object3);
+        createCylinder(-3 + 14 * i, -5, 0, 1, 8, 0xFF0000, object3);
     }
 
+    object2.add(object3);
+    object1.add(object2);
     scene.add(object1);
-    scene.add(object2);
-    scene.add(object3);
 }
 
-function useFullViewCamera() {
+function useFrontViewCamera() {
     'use strict';
 
-    camera = new THREE.PerspectiveCamera(70,
-                                         window.innerWidth / window.innerHeight,
-                                         1,
-                                         1000);
-    camera.position.x = 60;
-    camera.position.y = 60;
-    camera.position.z = 60;
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    camera = new THREE.OrthographicCamera(-window.innerWidth / 25,
+                                          window.innerWidth / 25,
+                                          window.innerHeight / 25,
+                                          -window.innerHeight / 25,
+                                          -100,
+                                          100);
+
+    camera.position.set(0, 27, 80);
+    camera.lookAt(new THREE.Vector3(0, 27, 0));
 }
 
 function useTopViewCamera() {
     'use strict';
 
-    // TODO: Change to orthographic camera
-    camera = new THREE.PerspectiveCamera(70,
-                                         window.innerWidth / window.innerHeight,
-                                         1,
-                                         1000);
+    camera = new THREE.OrthographicCamera(-window.innerWidth / 25,
+                                          window.innerWidth / 25,
+                                          -window.innerHeight / 25,
+                                          window.innerHeight / 25,
+                                          -100,
+                                          100);
     
-    camera.position.x = 22;
-    camera.position.y = 80;
-    camera.position.z = 0;
+    camera.position.set(22, 80, 0);
     camera.lookAt(new THREE.Vector3(22, 0, 0));
 
 }
@@ -133,16 +135,14 @@ function useTopViewCamera() {
 function useSideViewCamera() {
     'use strict';
 
-    // TODO: Change to orthographic camera
-    camera = new THREE.PerspectiveCamera(70,
-                                        window.innerWidth / window.innerHeight,
-                                        1,
-                                        1000);
+    camera = new THREE.OrthographicCamera(-window.innerWidth / 25,
+                                          window.innerWidth / 25,
+                                          window.innerHeight / 25,
+                                          -window.innerHeight / 25,
+                                          -100,
+                                          100);
 
-    camera.position.x = 0;
-    camera.position.y = 27;
-    camera.position.z = 80;
-    camera.lookAt(new THREE.Vector3(0, 27, 0));
+    // TODO: Define camera position
 }
 
 function onResize() {
@@ -164,19 +164,19 @@ function onKeyDown(e) {
         
         // Choose camera (should it be given a flag to update the camera in animate()?)
         case 49:  // 1
-            usingFullViewCamera = true;
+            usingFrontViewCamera = true;
             usingTopViewCamera = false;
             usingSideViewCamera = false;
             break;
 
         case 50:  // 2
-            usingFullViewCamera = false;
+            usingFrontViewCamera = false;
             usingTopViewCamera = true;
             usingSideViewCamera = false;
             break;
         
         case 51:  // 3
-            usingFullViewCamera = false;
+            usingFrontViewCamera = false;
             usingTopViewCamera = false;
             usingSideViewCamera = true;
             break;
@@ -224,7 +224,7 @@ function onKeyDown(e) {
             break;
 
             
-        // Move along the axis (x, y and z)
+        // Move object along the axis (x, y and z)
         
         case 37:  // Arrow left
             decreaseX = true;
@@ -241,14 +241,14 @@ function onKeyDown(e) {
         case 38:  // Arrow up
             increaseY = true;
             break;
-        
-        case 67:  // C
-        case 99:  // c
-            decreaseZ = true;
-            break;
 
         case 68:  // D
         case 100: // d
+            decreaseZ = true;
+            break;
+
+        case 67:  // C
+        case 99:  // c
             increaseZ = true;
             break;
     }
@@ -281,7 +281,7 @@ function init() {
 
     createScene();
     resetUpdateFlags();
-    usingFullViewCamera = true;
+    usingFrontViewCamera = true;
     wireframe = true;
 
     clock = new THREE.Clock();
@@ -295,8 +295,8 @@ function init() {
 function chooseCameraMode(){
     'use strict';
 
-    if (usingFullViewCamera)
-        useFullViewCamera();
+    if (usingFrontViewCamera)
+        useFrontViewCamera();
     else if (usingTopViewCamera)
         useTopViewCamera();
     else if (usingSideViewCamera)
@@ -310,7 +310,7 @@ function animate() {
 
     const deltaClock = clock.getDelta();
     const deltaR = 100 * deltaClock;
-    const deltaV = Math.PI * deltaClock/4; 
+    const deltaV = Math.PI * deltaClock / 2; 
 
     scene.traverse(function (node) {
         if (node instanceof THREE.Mesh) {
@@ -318,12 +318,16 @@ function animate() {
         }
     });
 
-    // Update camera position
-    camera.position.x += (increaseX - decreaseX) * deltaR;
-    camera.position.y += (increaseY - decreaseY) * deltaR;
-    camera.position.z += (increaseZ - decreaseZ) * deltaR;
+    // Update object position
+    object1.position.x += (increaseX - decreaseX) * deltaR;
+    object1.position.y += (increaseY - decreaseY) * deltaR;
+    object1.position.z += (increaseZ - decreaseZ) * deltaR;
 
-    // TODO: Update rotations based on deltaV
+    // Update rotations based on deltaV
+    object1.rotateY((increaseV1 - decreaseV1) * deltaV);
+    object2.rotateY((increaseV2 - decreaseV2) * deltaV);
+    object3.rotateX((increaseV3 - decreaseV3) * deltaV);
+
 
     // Reset update flags
     resetUpdateFlags();
