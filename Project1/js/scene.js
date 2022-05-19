@@ -30,6 +30,17 @@ function createParallelepiped(){
     object1.add(mesh);
 }
 
+function createCube(){
+    material = new THREE.MeshBasicMaterial({ color: 0xFFD400, wireframe: true });
+    geometry = new THREE.BoxGeometry(10, 10, 10);
+    mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(0, 15, 15);
+    mesh.rotation.set(0, 0, - Math.PI / 4);
+
+    object1.add(mesh);
+}
+
 // This is the only pyramid, so no coordinates are needed
 function createPyramid(){
     'use strict';
@@ -55,6 +66,66 @@ function createTorus(x, y, z, color, object){
     mesh.rotation.set(Math.PI / 2, 0, 0);
     
     object.add(mesh);
+}
+
+function createCone(x, y, z, radius, height, color, object){
+    'use strict';
+
+    material = new THREE.MeshBasicMaterial({color: color, wireframe: true })
+    geometry = new THREE.ConeGeometry(radius, height, 8);
+    mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(x, y, z);
+    
+    object.add(mesh);
+}
+
+class CustomSinCurve extends THREE.Curve {
+
+	constructor( scale = 5 ) {
+
+		super();
+
+		this.scale = scale;
+
+	}
+
+	getPoint( t, optionalTarget = new THREE.Vector3() ) {
+
+		const tx = t * 3 - 1.5;
+		const ty = t * 5 + Math.sin( 2 * Math.PI * t );
+		const tz = 0;
+
+		return optionalTarget.set( tx, ty, tz ).multiplyScalar( this.scale );
+
+	}
+
+}
+
+function createTube(){
+    'use strict';
+
+    const path = new CustomSinCurve();
+
+    material = new THREE.MeshBasicMaterial( { color: 0xFF6600 } );
+    geometry = new THREE.TubeGeometry( path, 20, 2, 8, false );
+    mesh = new THREE.Mesh( geometry, material );
+
+    mesh.position.set(-10, 20, -20);
+
+    object1.add(mesh);
+}
+
+function createSphere(){
+    'use strict';
+
+    material = new THREE.MeshBasicMaterial({color: 0x123456, wireframe: true })
+    geometry = new THREE.SphereGeometry(5, 16, 16);
+    mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(-15, 25, 10);
+    
+    object1.add(mesh);
 }
 
 function createCylinder(x, y, z, radius, height, color, object){
@@ -87,7 +158,10 @@ function createScene() {
 
     createParallelepiped();
     createPyramid();
-    createCylinder(0, 5.5, 0, 2, 11, 0xFF00FF, object2);
+    createTube();
+    createCube();
+    createSphere();
+    createCone(0, 5.5, 0, 2, 11, 0xFF00FF, object2);
     for (let i = 0; i < 2; ++i){
         for (let j = 0; j < 2; ++j)
             createTorus(-7 + 14 * i, -10 + 10 * j, 0, 0x00FF00, object3);
@@ -103,10 +177,10 @@ function createScene() {
 }
 
 function createCamera() {
-    camera = new THREE.OrthographicCamera(-window.innerWidth / 25,
-                                          window.innerWidth / 25,
-                                          window.innerHeight / 25,
-                                          -window.innerHeight / 25,
+    camera = new THREE.OrthographicCamera(-window.innerWidth / 20,
+                                          window.innerWidth / 20,
+                                          window.innerHeight / 20,
+                                          -window.innerHeight / 20,
                                           -1000,
                                           1000);
 }
@@ -346,8 +420,6 @@ function init() {
     wireframe = true;
 
     clock = new THREE.Clock();
-
-    render();
 
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
