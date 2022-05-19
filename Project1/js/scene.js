@@ -221,170 +221,119 @@ function onResize() {
 function onKeyDown(e) {
     'use strict';
 
-    switch (e.keyCode) {
-        
-        // Choose camera (should it be given a flag to update the camera in animate()?)
-        case 49:  // 1
-            usingFrontViewCamera = true;
-            usingTopViewCamera = false;
-            usingSideViewCamera = false;
-            break;
-
-        case 50:  // 2
-            usingFrontViewCamera = false;
-            usingTopViewCamera = true;
-            usingSideViewCamera = false;
-            break;
-        
-        case 51:  // 3
-            usingFrontViewCamera = false;
-            usingTopViewCamera = false;
-            usingSideViewCamera = true;
-            break;
-
-
-        // Alternate between solid and wireframe material
-        case 52:  // 4
-            wireframe = !wireframe;
-            break;
-
-
-        // Control v1 angle (main branch)
-        case 81:  // Q
-        case 113: // q
-            decreaseV1 = true;
-            break;
-
-        case 87:  // W
-        case 119: // w
-            increaseV1 = true;
-            break;
-           
-
-        // Control v2 angle (secondary branch)
-        case 65:  // A
-        case 97:  // a
-            decreaseV2 = true;
-            break;
-
-        case 83:  // S
-        case 115: // s
-            increaseV2 = true;
-            break;
-        
-
-        // Control v3 angle (tertiary branch)
-        case 90:  // Z
-        case 122: // z
-            decreaseV3 = true;
-            break;
-        
-        case 88:  // X
-        case 120: // x
-            increaseV3 = true;
-            break;
-
-            
-        // Move object along the axis (x, y and z)
-        
-        case 37:  // Arrow left
-            decreaseX = true;
-            break;
-
-        case 39:  // Arrow right
-            increaseX = true;
-            break;
-
-        case 40:  // Arrow down
-            decreaseY = true;
-            break;
-
-        case 38:  // Arrow up
-            increaseY = true;
-            break;
-
-        case 68:  // D
-        case 100: // d
-            decreaseZ = true;
-            break;
-
-        case 67:  // C
-        case 99:  // c
-            increaseZ = true;
-            break;
+    // Choose camera (should it be given a flag to update the camera in animate()?)
+    if (e.keyCode == 49) {  // 1
+        usingFrontViewCamera = true;
+        usingTopViewCamera = false;
+        usingSideViewCamera = false;
     }
+    else if (e.keyCode == 50) {  // 2
+        usingFrontViewCamera = false;
+        usingTopViewCamera = true;
+        usingSideViewCamera = false;
+    }
+    else if (e.keyCode == 51) {  // 3
+        usingFrontViewCamera = false;
+        usingTopViewCamera = false;
+        usingSideViewCamera = true;
+    }
+
+    // Alternate between solid and wireframe material
+    if (e.keyCode == 52)  // 4
+        wireframe = !wireframe;
+
+    // Control v1 angle (main branch)
+    if (e.keyCode == 81 || e.keyCode == 113)  // Q, q
+        decreaseV1 = true;
+
+    if (e.keyCode == 87 || e.keyCode == 119)  // W, w
+        increaseV1 = true;
+        
+
+    // Control v2 angle (secondary branch)
+    if (e.keyCode == 65 || e.keyCode == 97)  // A, a
+        decreaseV2 = true;
+
+    if (e.keyCode == 83 || e.keyCode == 115)  // S, s
+        increaseV2 = true;
+    
+
+    // Control v3 angle (tertiary branch)
+    if (e.keyCode == 90 || e.keyCode == 122)  // Z, z
+        decreaseV3 = true;
+
+    if (e.keyCode == 88 || e.keyCode == 120)  // X, x
+        increaseV3 = true;
+
+        
+    // Move object along the axis (x, y and z)
+    
+    if (e.keyCode == 37)  // Arrow left
+        decreaseX = true;
+
+    if (e.keyCode == 39)  // Arrow right
+        increaseX = true;
+
+    if (e.keyCode == 40)  // Arrow down
+        decreaseY = true;
+
+    if (e.keyCode == 38)  // Arrow up
+        increaseY = true;
+
+    if (e.keyCode == 68 || e.keyCode == 100)  // D, d
+        decreaseZ = true;
+
+    if (e.keyCode == 67 || e.keyCode == 99)  // C, c
+        increaseZ = true;
 
 }
 
 function onKeyUp(e) {
     'use strict';
 
-    switch (e.keyCode) {
-        
-        // Control v1 angle (main branch)
-        case 81:  // Q
-        case 113: // q
-            decreaseV1 = false;
-            break;
+    // Control v1 angle (main branch)
+    if (e.keyCode == 81 || e.keyCode == 113)  // Q, q
+        decreaseV1 = false;
 
-        case 87:  // W
-        case 119: // w
-            increaseV1 = false;
-            break;
-           
-
-        // Control v2 angle (secondary branch)
-        case 65:  // A
-        case 97:  // a
-            decreaseV2 = false;
-            break;
-
-        case 83:  // S
-        case 115: // s
-            increaseV2 = false;
-            break;
+    if (e.keyCode == 87 || e.keyCode == 119)  // W, w
+        increaseV1 = false;
         
 
-        // Control v3 angle (tertiary branch)
-        case 90:  // Z
-        case 122: // z
-            decreaseV3 = false;
-            break;
+    // Control v2 angle (secondary branch)
+    if (e.keyCode == 65 || e.keyCode == 97)  // A, a
+        decreaseV2 = false;
+
+    if (e.keyCode == 83 || e.keyCode == 115)  // S, s
+        increaseV2 = false;
+    
+
+    // Control v3 angle (tertiary branch)
+    if (e.keyCode == 90 || e.keyCode == 122)  // Z, z
+        decreaseV3 = false;
+
+    if (e.keyCode == 88 || e.keyCode == 120)  // X, x
+        increaseV3 = false;
+
         
-        case 88:  // X
-        case 120: // x
-            increaseV3 = false;
-            break;
+    // Move object along the axis (x, y and z)
+    
+    if (e.keyCode == 37)  // Arrow left
+        decreaseX = false;
 
-            
-        // Move object along the axis (x, y and z)
-        
-        case 37:  // Arrow left
-            decreaseX = false;
-            break;
+    if (e.keyCode == 39)  // Arrow right
+        increaseX = false;
 
-        case 39:  // Arrow right
-            increaseX = false;
-            break;
+    if (e.keyCode == 40)  // Arrow down
+        decreaseY = false;
 
-        case 40:  // Arrow down
-            decreaseY = false;
-            break;
+    if (e.keyCode == 38)  // Arrow up
+        increaseY = false;
 
-        case 38:  // Arrow up
-            increaseY = false;
-            break;
+    if (e.keyCode == 68 || e.keyCode == 100)  // D, d
+        decreaseZ = false;
 
-        case 68:  // D
-        case 100: // d
-            decreaseZ = false;
-            break;
-
-        case 67:  // C
-        case 99:  // c
-            increaseZ = false;
-            break;
-    }
+    if (e.keyCode == 67 || e.keyCode == 99)  // C, c
+        increaseZ = false;
 
 }
 
