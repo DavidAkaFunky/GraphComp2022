@@ -55,29 +55,29 @@ function createPyramid(){
     object1.add(mesh);
 }
 
-function createTorus(x, y, z, color, object){
+function createTorus(x, y, z){
     'use strict';
 
-    material = new THREE.MeshBasicMaterial({color: color, wireframe: true })
+    material = new THREE.MeshBasicMaterial({color: 0x00FF00, wireframe: true })
     geometry = new THREE.TorusGeometry(4, 1, 16, 16);
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.set(x, y, z);
     mesh.rotation.set(Math.PI / 2, 0, 0);
     
-    object.add(mesh);
+    object3.add(mesh);
 }
 
-function createCone(x, y, z, radius, height, color, object){
+function createCone(){
     'use strict';
 
-    material = new THREE.MeshBasicMaterial({color: color, wireframe: true })
-    geometry = new THREE.ConeGeometry(radius, height, 8);
+    material = new THREE.MeshBasicMaterial({color: 0xFF00FF, wireframe: true })
+    geometry = new THREE.ConeGeometry(2, 11, 8);
     mesh = new THREE.Mesh(geometry, material);
 
-    mesh.position.set(x, y, z);
+    mesh.position.set(0, 5.5, 0);
     
-    object.add(mesh);
+    object2.add(mesh);
 }
 
 class CustomSinCurve extends THREE.Curve {
@@ -128,16 +128,16 @@ function createSphere(){
     object1.add(mesh);
 }
 
-function createCylinder(x, y, z, radius, height, color, object){
+function createCylinder(x, y, z, ){
     'use strict';
 
-    material = new THREE.MeshBasicMaterial({color: color, wireframe: true })
-    geometry = new THREE.CylinderGeometry(radius, radius, height, 8);
+    material = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true })
+    geometry = new THREE.CylinderGeometry(1, 1, 8, 8);
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.set(x, y, z);
     
-    object.add(mesh);
+    object3.add(mesh);
 }
 
 function createScene() {
@@ -161,14 +161,14 @@ function createScene() {
     createTube();
     createCube();
     createSphere();
-    createCone(0, 5.5, 0, 2, 11, 0xFF00FF, object2);
+    createCone();
     for (let i = 0; i < 2; ++i){
         for (let j = 0; j < 2; ++j)
-            createTorus(-7 + 14 * i, -10 + 10 * j, 0, 0x00FF00, object3);
-        createCylinder(-11 + 14 * i, -5, 0, 1, 8, 0xFF0000, object3);
-        createCylinder(-7 + 14 * i, -5, -4, 1, 8, 0xFF0000, object3);
-        createCylinder(-7 + 14 * i, -5, 4, 1, 8, 0xFF0000, object3);
-        createCylinder(-3 + 14 * i, -5, 0, 1, 8, 0xFF0000, object3);
+            createTorus(-7 + 14 * i, -10 + 10 * j, 0);
+        createCylinder(-11 + 14 * i, -5, 0);
+        createCylinder(-7 + 14 * i, -5, -4);
+        createCylinder(-7 + 14 * i, -5, 4);
+        createCylinder(-3 + 14 * i, -5, 0);
     }
 
     object2.add(object3);
