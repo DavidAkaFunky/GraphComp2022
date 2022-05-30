@@ -12,6 +12,8 @@ const earthRadius = 50;
 
 const spaceRadius = 1.2 * earthRadius;
 
+const rocketLength = earthRadius / 11;
+
 var decreaseLat, decreaseLong;
 
 var increaseLat, increaseLong;
@@ -19,6 +21,8 @@ var increaseLat, increaseLong;
 var rocketLat, rocketLong; // Should it still move after we leave the key up?
 
 var object1, object2;
+
+var quadrants;
 
 function getRandomSize(min, max) {
     'use strict';
@@ -29,9 +33,56 @@ function getRandomAngle() {
     return Math.random() * 2 * Math.PI;
 }
 
+function convertFromSpherical(radius, lat, long) {
+    const n = Math.sin(lat) * radius;
+    return new THREE.Vector3(n * Math.sin(long), Math.cos(lat)* radius, n * Math.cos(long));
+}
+
 function setPosition(meshOrObject, lat, long){
-    meshOrObject.position = new THREE.Vector3();
-    meshOrObject.position.setFromSpherical(new THREE.Spherical(spaceRadius, lat, long));
+    var vec = convertFromSpherical(spaceRadius, lat, long);
+    meshOrObject.position.set(vec.x, vec.y, vec.z);
+}
+
+function findQuadrant(lat, long) {
+    if (0 <= lat && lat < Math.PI / 2){
+        if (- Math.PI <= long && long < 0)
+            return 0;
+        else
+            return 1;
+    }
+    else{
+        if (- Math.PI <= long && long < 0)
+            return 2;
+        else
+            return 3;
+    }
+}
+
+function addToQuadrant(lat, long, radius) {
+    quadrants[findQuadrant(lat, long)].push([convertFromSpherical(radius, lat, long), radius, false]);
+}
+
+// Assuming there is only one collision
+function detectCollision(deltaLat, deltaLong) {
+    /*var quadrant = quadrants[findQuadrant(rocketLat, rocketLong)];
+    for (var i = 0; i < quadrant.length; ++i)
+        var dist = convertFromSpherical(spaceRadius, rocketLat + deltaLat, rocketLong + deltaLong).distanceTo(quadrant[i][0]);
+        console.log(rocketLength);
+        console.log(quadrant[i]);
+        const radiiSum = rocketLength + quadrant[i][1];
+        if (dist <= radiiSum){
+            quadrant[i][2] = true;
+            return convertFromSpherical(spaceRadius, rocketLat + deltaLat, rocketLong + deltaLong).sub(quadrant[i][0]) * quadrant[i][1] / rocketLength
+        }
+    */
+    return new THREE.Vector3(0, 0, 0);
+}
+
+function removeDebris() {
+    var quadrant = quadrants[findQuadrant(rocketLat, rocketLong)];
+    for (var i = 0; i < quadrant.length; i++)
+        if (quadrant[i][2])
+            quadrant.splice(i, 1);
 }
 
 function createSphere() {
@@ -52,7 +103,14 @@ function createCube() {
     geometry = new THREE.BoxGeometry(size, size, size);
     mesh = new THREE.Mesh(geometry, material);
 
-    setPosition(mesh, getRandomAngle(), getRandomAngle());
+    const lat = getRandomAngle() / 2;
+    const long = getRandomAngle();
+
+    addToQuadrant(lat, long, size*Math.sqrt(3));
+    setPosition(mesh, lat, long);
+    
+    console.log(lat, long);
+
     object1.add(mesh);
 }
 
@@ -64,7 +122,14 @@ function createCone() {
     geometry = new THREE.ConeGeometry(size/2, size, 8);
     mesh = new THREE.Mesh(geometry, material);
     
-    setPosition(mesh, getRandomAngle(), getRandomAngle());
+    const lat = getRandomAngle() / 2;
+    const long = getRandomAngle();
+
+    addToQuadrant(lat, long, size);
+    setPosition(mesh, lat, long);
+
+    console.log(lat, long);
+
     object1.add(mesh);
 }
 
@@ -93,10 +158,12 @@ function createCapsule(radius, length, x, y, z) {
 function createRocket() {
     'use strict';
 
-    createParallelepiped(earthRadius / 22, (3/44) * earthRadius, earthRadius / 22, 0, 0, 0);
-    createParallelepiped(earthRadius / 44, earthRadius / 44, earthRadius / 44, 0, earthRadius / 22, 0);
-    createCapsule(earthRadius / 88, (3/88) * earthRadius, - (3/88) * earthRadius, - earthRadius / 44, 19);
-    createCapsule(30, 30,(3/88) * earthRadius, - earthRadius / 44, 19);
+
+
+    createParallelepiped(rocketLength / 2, (3/4) * rocketLength, rocketLength / 2, 0, 0, 0);
+    createParallelepiped(rocketLength / 4, rocketLength / 4, rocketLength / 4, 0, rocketLength / 2, 0);
+    createCapsule(rocketLength / 8, (3/8) * rocketLength, - (3/8) * rocketLength, - rocketLength / 4, 19);
+    createCapsule(30, 30, (3/8) * rocketLength, - rocketLength / 4, 19);
     //createCapsule(/* Add parameters */);
     //createCapsule(/* Add parameters */);
     //createCapsule(/* Add parameters */);
@@ -124,9 +191,9 @@ function createScene() {
     createRocket();
 
     // Initial latitute and longitude
-    rocketLat = getRandomAngle();
+    rocketLat = getRandomAngle() / 2;
     rocketLong = getRandomAngle();
-    console.log("HERE", rocketLat, rocketLong);
+    
     setPosition(object2, rocketLat, rocketLong);
 
     object1.add(object2);
@@ -201,10 +268,10 @@ function onKeyDown(e) {
         increaseLong = true;
 
     if (e.keyCode == 40)  // Arrow down
-        decreaseLat = true;
+        increaseLat = true;
 
     if (e.keyCode == 38)  // Arrow up
-        increaseLat = true;
+        decreaseLat = true;
 }
 
 function onKeyUp(e) {
@@ -217,10 +284,10 @@ function onKeyUp(e) {
         increaseLong = false;
 
     if (e.keyCode == 40)  // Arrow down
-        decreaseLat = false;
+        increaseLat = false;
 
     if (e.keyCode == 38)  // Arrow up
-        increaseLat = false;
+        decreaseLat = false;
 }
 
 function resetUpdateFlags(){
@@ -244,6 +311,7 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    quadrants = [[], [], [], []];
     createScene();
     resetUpdateFlags();
     useFixedOrthogonalCamera();
@@ -277,14 +345,24 @@ function animate() {
 
     const deltaRocketLat = (increaseLat - decreaseLat);
     const deltaRocketLong = (increaseLong - decreaseLong);
-    const norm = Math.sqrt(Math.pow(deltaRocketLat, 2) + Math.pow(deltaRocketLong, 2)); 
+    const norm = Math.sqrt(deltaRocketLat ** 2 + deltaRocketLong ** 2); 
 
     if (norm > 0) {
-        rocketLat = (rocketLat + deltaRocketLat * deltaAngle / norm) % (2 * Math.PI);
-        rocketLong = (rocketLong + deltaRocketLong * deltaAngle / norm) % (2 * Math.PI);
+        rocketLat = (rocketLat + deltaRocketLat * deltaAngle / norm);
+        rocketLong = (rocketLong + deltaRocketLong * deltaAngle / norm) % Math.PI;
+
+        if (rocketLat < 0)
+            rocketLat = 0;
+        
+        else if (rocketLat > Math.PI)
+            rocketLat = Math.PI;
+
     }
-    
+
     setPosition(object2, rocketLat, rocketLong);
+
+    if (norm > 0)
+        object2.position.sub(detectCollision(deltaRocketLat * deltaAngle / norm, deltaRocketLong * deltaAngle / norm));
 
     render();
 
