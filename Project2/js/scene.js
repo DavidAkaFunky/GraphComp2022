@@ -82,7 +82,7 @@ function createParallelepiped(length, width, height, x, y, z) {
 function createCapsule(radius, length, x, y, z) {
     'use strict';
 
-    material = new THREE.MeshBasicMaterial({color: 'yellow'})
+    material = new THREE.MeshBasicMaterial({color: 'red'})
     geometry = new THREE.CapsuleGeometry(radius, length, x, y, z);
     mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
@@ -93,11 +93,13 @@ function createCapsule(radius, length, x, y, z) {
 function createRocket() {
     'use strict';
 
-    createParallelepiped((3/88) * earthRadius, (3/44) * earthRadius, (3/88) * earthRadius, 0, 0, 0);
-    createParallelepiped(earthRadius / 88, earthRadius / 44, earthRadius / 88, 0, earthRadius / 22, 0);
-    for (var i = 0; i < 2; ++i)
-        for (var j = 0; j < 2; ++j)
-            createCapsule(/* Add parameters */);
+    createParallelepiped(earthRadius / 22, (3/44) * earthRadius, earthRadius / 22, 0, 0, 0);
+    createParallelepiped(earthRadius / 44, earthRadius / 44, earthRadius / 44, 0, earthRadius / 22, 0);
+    createCapsule(earthRadius / 88, (3/88) * earthRadius, - (3/88) * earthRadius, - earthRadius / 44, 19);
+    createCapsule(30, 30,(3/88) * earthRadius, - earthRadius / 44, 19);
+    //createCapsule(/* Add parameters */);
+    //createCapsule(/* Add parameters */);
+    //createCapsule(/* Add parameters */);
 }
 
 function createScene() {
@@ -123,7 +125,8 @@ function createScene() {
 
     // Initial latitute and longitude
     rocketLat = getRandomAngle();
-    rocketLong = getRandomAngle(); 
+    rocketLong = getRandomAngle();
+    console.log("HERE", rocketLat, rocketLong);
     setPosition(object2, rocketLat, rocketLong);
 
     object1.add(object2);
@@ -272,9 +275,15 @@ function animate() {
     const deltaClock = clock.getDelta();
     const deltaAngle = Math.PI * deltaClock / 10; 
 
-    rocketLat = (rocketLat + (increaseLat - decreaseLat) * deltaAngle) % (2 * Math.PI);
-    rocketLong = (rocketLong + (increaseLong - decreaseLong) * deltaAngle) % (2 * Math.PI);
+    const deltaRocketLat = (increaseLat - decreaseLat);
+    const deltaRocketLong = (increaseLong - decreaseLong);
+    const norm = Math.sqrt(Math.pow(deltaRocketLat, 2) + Math.pow(deltaRocketLong, 2)); 
 
+    if (norm > 0) {
+        rocketLat = (rocketLat + deltaRocketLat * deltaAngle / norm) % (2 * Math.PI);
+        rocketLong = (rocketLong + deltaRocketLong * deltaAngle / norm) % (2 * Math.PI);
+    }
+    
     setPosition(object2, rocketLat, rocketLong);
 
     render();
