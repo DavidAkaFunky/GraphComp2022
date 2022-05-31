@@ -20,9 +20,11 @@ var increaseLat, increaseLong;
 
 var rocketLat, rocketLong; // Should it still move after we leave the key up?
 
-var object1, object2;
-
 var quadrants;
+
+var collisionDetected;
+
+var rocket;
 
 function getRandomSize(min, max) {
     'use strict';
@@ -39,50 +41,67 @@ function convertFromSpherical(radius, lat, long) {
 }
 
 function setPosition(meshOrObject, lat, long){
-    var vec = convertFromSpherical(spaceRadius, lat, long);
-    meshOrObject.position.set(vec.x, vec.y, vec.z);
+    meshOrObject.position.copy(convertFromSpherical(spaceRadius, lat, long));
 }
 
 function findQuadrant(lat, long) {
     if (0 <= lat && lat < Math.PI / 2){
-        if (- Math.PI <= long && long < 0)
+        if (0 <= long && long < Math.PI)
             return 0;
-        else
+        else if (Math.PI <= long && long <= 2 * Math.PI)
             return 1;
     }
-    else{
-        if (- Math.PI <= long && long < 0)
+    else if (Math.PI / 2 <= lat && lat <= Math.PI){
+        if (0 <= long && long < Math.PI)
             return 2;
-        else
+        else if (Math.PI <= long && long <= 2 * Math.PI)
             return 3;
     }
 }
 
-function addToQuadrant(lat, long, radius) {
-    quadrants[findQuadrant(lat, long)].push([convertFromSpherical(radius, lat, long), radius, false]);
+function addToQuadrant(lat, long, radius, object) {
+    quadrants[findQuadrant(lat, long)].push([convertFromSpherical(spaceRadius, lat, long), radius, false, object]);
+}
+
+function isOverlapping(lat, long, radius) {
+    'use strict';
+
+    for (var quadrant = 0; quadrant < quadrants.length; ++quadrant) {
+        var vectorEuclidian = convertFromSpherical(spaceRadius, lat, long);
+        for (var i = 0; i < quadrants[quadrant].length; ++i){
+            const dist = vectorEuclidian.distanceTo(quadrants[quadrant][i][0]);
+            const radiiSum = radius + quadrants[quadrant][i][1];
+            if (dist <= radiiSum)
+                return true;
+        }
+    }
+    return false;
 }
 
 // Assuming there is only one collision
 function detectCollision(deltaLat, deltaLong) {
-    /*var quadrant = quadrants[findQuadrant(rocketLat, rocketLong)];
-    for (var i = 0; i < quadrant.length; ++i)
-        var dist = convertFromSpherical(spaceRadius, rocketLat + deltaLat, rocketLong + deltaLong).distanceTo(quadrant[i][0]);
-        console.log(rocketLength);
-        console.log(quadrant[i]);
-        const radiiSum = rocketLength + quadrant[i][1];
+    var quadrant = findQuadrant(rocketLat, rocketLong);
+    var vectorEuclidian = convertFromSpherical(spaceRadius, rocketLat + deltaLat, rocketLong + deltaLong);
+    for (var i = 0; i < quadrants[quadrant].length; ++i){
+        const dist = vectorEuclidian.distanceTo(quadrants[quadrant][i][0]);
+        const radiiSum = rocketLength + quadrants[quadrant][i][1];
         if (dist <= radiiSum){
-            quadrant[i][2] = true;
-            return convertFromSpherical(spaceRadius, rocketLat + deltaLat, rocketLong + deltaLong).sub(quadrant[i][0]) * quadrant[i][1] / rocketLength
+            collisionDetected = true;
+            quadrants[quadrant][i][2] = true;
+            return vectorEuclidian.multiplyScalar(1 - quadrants[quadrant][i][1] / dist);
         }
-    */
-    return new THREE.Vector3(0, 0, 0);
+    }
+    return vectorEuclidian;
 }
 
 function removeDebris() {
-    var quadrant = quadrants[findQuadrant(rocketLat, rocketLong)];
-    for (var i = 0; i < quadrant.length; i++)
-        if (quadrant[i][2])
-            quadrant.splice(i, 1);
+    var quadrant = findQuadrant(rocketLat, rocketLong);
+    for (var i = 0; i < quadrants[quadrant].length; i++) {
+        if (quadrants[quadrant][i][2]){
+            scene.remove(quadrants[quadrant][i][3]);
+            quadrants[quadrant].splice(i, 1);
+        }
+    }
 }
 
 function createSphere() {
@@ -92,92 +111,107 @@ function createSphere() {
     geometry = new THREE.SphereGeometry(earthRadius, 16, 16);
     mesh = new THREE.Mesh(geometry, material);
     
-    object1.add(mesh);
+    var object = new THREE.Object3D();
+    object.add(mesh);
+    scene.add(object);
 }
 
 function createCube() {
     'use strict';
 
-    const size = getRandomSize(earthRadius/(24*Math.sqrt(3)), earthRadius/(20*Math.sqrt(3)));
+    const size = (2 / Math.sqrt(3)) * getRandomSize(earthRadius/24, earthRadius/20);
     material = new THREE.MeshBasicMaterial({ color: 'green'});
     geometry = new THREE.BoxGeometry(size, size, size);
     mesh = new THREE.Mesh(geometry, material);
 
-    const lat = getRandomAngle() / 2;
-    const long = getRandomAngle();
+    var lat, long;
+    do {
+        lat = getRandomAngle() / 2;
+        long = getRandomAngle();
+        setPosition(mesh, lat, long);
+    } while (isOverlapping(lat, long, size));
 
-    addToQuadrant(lat, long, size*Math.sqrt(3));
-    setPosition(mesh, lat, long);
-    
-    console.log(lat, long);
+    var object = new THREE.Object3D();
+    object.add(mesh);
+    scene.add(object);
 
-    object1.add(mesh);
+    addToQuadrant(lat, long, size*Math.sqrt(3), object);
 }
 
 function createCone() {
     'use strict';
 
-    const size = getRandomSize(earthRadius/24, earthRadius/20);
+    const size = (3 / Math.sqrt(5)) * getRandomSize(earthRadius/24, earthRadius/20);
     material = new THREE.MeshBasicMaterial({color: 'red'})
     geometry = new THREE.ConeGeometry(size/2, size, 8);
     mesh = new THREE.Mesh(geometry, material);
     
-    const lat = getRandomAngle() / 2;
-    const long = getRandomAngle();
+    var lat, long;
+    do {
+        lat = getRandomAngle() / 2;
+        long = getRandomAngle();
+        setPosition(mesh, lat, long);
+    } while (isOverlapping(lat, long, size));
 
-    addToQuadrant(lat, long, size);
-    setPosition(mesh, lat, long);
+    var object = new THREE.Object3D();
+    object.add(mesh);
+    scene.add(object);
 
-    console.log(lat, long);
-
-    object1.add(mesh);
+    addToQuadrant(lat, long, size, object);
 }
 
-function createParallelepiped(length, width, height, x, y, z) {
+function createCylinder(radius, height, x, y, z){
     'use strict';
 
     material = new THREE.MeshBasicMaterial({color: 'yellow'})
-    geometry = new THREE.BoxGeometry(length, width, height);
+    geometry = new THREE.CylinderGeometry(radius, radius, height, 16);
     mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, z);
-    object2.add(mesh);
 
+    mesh.position.set(x, y, z);
+    
+    rocket.add(mesh);
 }
 
 function createCapsule(radius, length, x, y, z) {
     'use strict';
 
     material = new THREE.MeshBasicMaterial({color: 'red'})
-    geometry = new THREE.CapsuleGeometry(radius, length, x, y, z);
+    geometry = new THREE.CapsuleGeometry(radius, length, 10, 20);
     mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
-    object2.add(mesh);
 
+    console.log(x, y, z);
+    rocket.add(mesh);
 }
 
 function createRocket() {
     'use strict';
 
+    rocket = new THREE.Object3D();
 
+    createCylinder(rocketLength / 4, (3/4) * rocketLength, 0, - rocketLength / 8, 0);
+    createCylinder(rocketLength / 8, rocketLength / 4, 0, (3/8) * rocketLength, 0);
+    createCapsule(rocketLength / 8, (1/4) * rocketLength, - (3/8) * rocketLength, - rocketLength / 4, 0);
+    createCapsule(rocketLength / 8, (1/4) * rocketLength, (3/8) * rocketLength, - rocketLength / 4, 0);
+    createCapsule(rocketLength / 8, (1/4) * rocketLength, 0, - rocketLength / 4, - (3/8) * rocketLength);
+    createCapsule(rocketLength / 8, (1/4) * rocketLength, 0, - rocketLength / 4, (3/8) * rocketLength);
 
-    createParallelepiped(rocketLength / 2, (3/4) * rocketLength, rocketLength / 2, 0, 0, 0);
-    createParallelepiped(rocketLength / 4, rocketLength / 4, rocketLength / 4, 0, rocketLength / 2, 0);
-    createCapsule(rocketLength / 8, (3/8) * rocketLength, - (3/8) * rocketLength, - rocketLength / 4, 19);
-    createCapsule(30, 30, (3/8) * rocketLength, - rocketLength / 4, 19);
-    //createCapsule(/* Add parameters */);
-    //createCapsule(/* Add parameters */);
-    //createCapsule(/* Add parameters */);
+    // Initial latitute and longitude
+    do {
+        rocketLat = getRandomAngle() / 2;
+        rocketLong = getRandomAngle();
+        setPosition(mesh, rocketLat, rocketLong);
+    } while (isOverlapping(rocketLat, rocketLong, rocketLength));
+
+    setPosition(rocket, rocketLat, rocketLong);
+
+    scene.add(rocket);
 }
 
-function createScene() {
+function createEnvironment() {
     'use strict';
 
     scene = new THREE.Scene();
-
-    //scene.add(new THREE.AxisHelper(50));
-    
-    object1 = new THREE.Object3D();
-    object2 = new THREE.Object3D();
 
     for (var i = 0; i < 7; ++i) { // The debris cannot be overlapped
         createCube();
@@ -190,14 +224,6 @@ function createScene() {
     // Create Rocket
     createRocket();
 
-    // Initial latitute and longitude
-    rocketLat = getRandomAngle() / 2;
-    rocketLong = getRandomAngle();
-    
-    setPosition(object2, rocketLat, rocketLong);
-
-    object1.add(object2);
-    scene.add(object1);
 }
 
 function useFixedOrthogonalCamera() {
@@ -217,9 +243,9 @@ function useFixedOrthogonalCamera() {
 function useFixedPerspectiveCamera() {
     'use strict';
     camera = new THREE.PerspectiveCamera(60,
-                                          window.innerWidth/window.innerHeight,
-                                          1,
-                                          1000);
+                                         window.innerWidth / window.innerHeight,
+                                         1,
+                                         1000);
     camera.position.set(0, 0, 125);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
@@ -227,20 +253,12 @@ function useFixedPerspectiveCamera() {
 function useRocketPerspectiveCamera() {
     'use strict';
     camera = new THREE.PerspectiveCamera(60,
-                                        window.innerWidth/window.innerHeight,
-                                        1,
-                                        1000);
+                                         window.innerWidth / window.innerHeight,
+                                         1,
+                                         1000);
 
-    const cameraOffset = new THREE.Vector3(rocketLength, rocketLength, rocketLength); 
-
-    var objectPosition = new THREE.Vector3();
-    object2.getWorldPosition(objectPosition);
-    
-    camera.lookAt(objectPosition);
-    objectPosition = objectPosition.add(cameraOffset);
-
-    camera.position.set(objectPosition);
-    
+    camera.position.copy(convertFromSpherical(spaceRadius + 40, rocketLat, rocketLong));
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
 function onResize() {
@@ -312,6 +330,7 @@ function resetUpdateFlags(){
 
     decreaseLat = false;   increaseLat = false;
     decreaseLong = false;  increaseLong = false;
+    collisionDetected = false;
 }
 
 function render() {
@@ -329,9 +348,8 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     quadrants = [[], [], [], []];
-    createScene();
+    createEnvironment();
     resetUpdateFlags();
-    useFixedOrthogonalCamera();
     usingFixedOrthogonalCamera = true;
 
     clock = new THREE.Clock();
@@ -366,7 +384,7 @@ function animate() {
 
     if (norm > 0) {
         rocketLat = (rocketLat + deltaRocketLat * deltaAngle / norm);
-        rocketLong = (rocketLong + deltaRocketLong * deltaAngle / norm) % Math.PI;
+        rocketLong = (rocketLong + deltaRocketLong * deltaAngle / norm) % (2 * Math.PI);
 
         if (rocketLat < 0)
             rocketLat = 0;
@@ -374,12 +392,19 @@ function animate() {
         else if (rocketLat > Math.PI)
             rocketLat = Math.PI;
 
+        if (rocketLong < 0)
+            rocketLong = 2 * Math.PI;
     }
 
-    setPosition(object2, rocketLat, rocketLong);
+    setPosition(rocket, rocketLat, rocketLong);
 
     if (norm > 0)
-        object2.position.sub(detectCollision(deltaRocketLat * deltaAngle / norm, deltaRocketLong * deltaAngle / norm));
+        rocket.position.copy(detectCollision(deltaRocketLat * deltaAngle / norm, deltaRocketLong * deltaAngle / norm));
+
+    if (collisionDetected)
+        removeDebris();
+
+    collisionDetected = false;
 
     render();
 
