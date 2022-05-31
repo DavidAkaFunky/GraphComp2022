@@ -220,15 +220,27 @@ function useFixedPerspectiveCamera() {
                                           window.innerWidth/window.innerHeight,
                                           1,
                                           1000);
-    // TODO
     camera.position.set(0, 0, 125);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
 function useRocketPerspectiveCamera() {
     'use strict';
+    camera = new THREE.PerspectiveCamera(60,
+                                        window.innerWidth/window.innerHeight,
+                                        1,
+                                        1000);
 
-    // TODO
+    const cameraOffset = new THREE.Vector3(rocketLength, rocketLength, rocketLength); 
+
+    var objectPosition = new THREE.Vector3();
+    object2.getWorldPosition(objectPosition);
+    
+    camera.lookAt(objectPosition);
+    objectPosition = objectPosition.add(cameraOffset);
+
+    camera.position.set(objectPosition);
+    
 }
 
 function onResize() {
