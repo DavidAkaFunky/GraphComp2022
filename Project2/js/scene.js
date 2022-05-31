@@ -200,10 +200,8 @@ function createRocket() {
     do {
         rocketLat = getRandomAngle() / 2;
         rocketLong = getRandomAngle();
-        setPosition(mesh, rocketLat, rocketLong);
+        setPosition(rocket, rocketLat, rocketLong);
     } while (isOverlapping(rocketLat, rocketLong, rocketLength));
-
-    setPosition(rocket, rocketLat, rocketLong);
 
     scene.add(rocket);
 }
