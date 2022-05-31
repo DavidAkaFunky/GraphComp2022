@@ -216,8 +216,13 @@ function useFixedOrthogonalCamera() {
 
 function useFixedPerspectiveCamera() {
     'use strict';
-    
+    camera = new THREE.PerspectiveCamera(60,
+                                          window.innerWidth/window.innerHeight,
+                                          1,
+                                          1000);
     // TODO
+    camera.position.set(0, 0, 125);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
 function useRocketPerspectiveCamera() {
