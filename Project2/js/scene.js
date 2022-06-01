@@ -20,11 +20,15 @@ var increaseLat, increaseLong;
 
 var rocketLat, rocketLong; // Should it still move after we leave the key up?
 
+var crosshairLat, crosshairLong;
+
 var quadrants;
 
 var collisionDetected;
 
 var rocket;
+
+var crosshair;
 
 function getRandomSize(min, max) {
     'use strict';
@@ -183,7 +187,6 @@ function createCapsule(radius, length, x, y, z) {
     mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
 
-    console.log(x, y, z);
     rocket.add(mesh);
 }
 
@@ -209,6 +212,23 @@ function createRocket() {
     scene.add(rocket);
 }
 
+function createCrosshair() {
+    'use strict';
+
+    crosshair = new THREE.Object3D();
+
+    material = new THREE.MeshBasicMaterial({color: 'purple'});
+    geometry = new THREE.BoxGeometry(2, 2, 2);
+    mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(0, (3/8) * rocketLength, 0);
+
+    setPosition(crosshair, rocketLat, rocketLong);
+
+    crosshair.add(mesh);
+
+    scene.add(crosshair);
+}
+
 function createEnvironment() {
     'use strict';
 
@@ -225,6 +245,9 @@ function createEnvironment() {
 
     // Create Rocket
     createRocket();
+
+    // Create Crosshair
+    createCrosshair();
 
 }
 
@@ -388,21 +411,32 @@ function animate() {
         rocketLat = (rocketLat + deltaRocketLat * deltaAngle / norm);
         rocketLong = (rocketLong + deltaRocketLong * deltaAngle / norm) % (2 * Math.PI);
 
-        if (rocketLat < 0)
-            rocketLat = 0;
-        
-        else if (rocketLat > Math.PI)
-            rocketLat = Math.PI;
+        crosshairLat = rocketLat + (deltaRocketLat * deltaAngle / norm) * 50;
+        crosshairLong = rocketLong + ((deltaRocketLong * deltaAngle / norm)) * 50 % (2 * Math.PI); 
 
-        if (rocketLong < 0)
+        if (rocketLat < 0){
+            rocketLat = 0;
+            crosshairLat = 0;
+        }
+        
+        else if (rocketLat > Math.PI){
+            rocketLat = Math.PI;
+            crosshairLat = Math.PI;
+        }
+        if (rocketLong < 0){
             rocketLong = 2 * Math.PI;
+            crosshairLong = 2 * Math.PI;
+        }
     }
 
     setPosition(rocket, rocketLat, rocketLong);
+    console.log(crosshairLat, crosshairLong);
+    setPosition(crosshair, crosshairLat, crosshairLong);
 
-    if (norm > 0)
+    if (norm > 0){
         rocket.position.copy(detectCollision(deltaRocketLat * deltaAngle / norm, deltaRocketLong * deltaAngle / norm));
-
+        crosshair.position.copy(detectCollision(deltaRocketLat * deltaAngle / norm, deltaRocketLong * deltaAngle / norm));
+    }
     if (collisionDetected)
         removeDebris();
 
