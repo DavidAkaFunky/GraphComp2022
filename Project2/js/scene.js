@@ -120,7 +120,7 @@ function createCube() {
     'use strict';
 
     const size = (2 / Math.sqrt(3)) * getRandomSize(earthRadius/24, earthRadius/20);
-    material = new THREE.MeshBasicMaterial({ color: 'green'});
+    material = new THREE.MeshBasicMaterial({color: 'green'});
     geometry = new THREE.BoxGeometry(size, size, size);
     mesh = new THREE.Mesh(geometry, material);
 
@@ -138,12 +138,11 @@ function createCube() {
     addToQuadrant(lat, long, size*Math.sqrt(3), object);
 }
 
-function createCone() {
-    'use strict';
+function createCone(color, segments = 16) {
 
     const size = (3 / Math.sqrt(5)) * getRandomSize(earthRadius/24, earthRadius/20);
-    material = new THREE.MeshBasicMaterial({color: 'red'})
-    geometry = new THREE.ConeGeometry(size/2, size, 8);
+    material = new THREE.MeshBasicMaterial({color: color})
+    geometry = new THREE.ConeGeometry(size/2, size, segments);
     mesh = new THREE.Mesh(geometry, material);
     
     var lat, long;
@@ -160,10 +159,14 @@ function createCone() {
     addToQuadrant(lat, long, size, object);
 }
 
-function createCylinder(radius, height, x, y, z){
+function createPyramid(){
+    createCone('orange', segments = 4);
+}
+
+function createCylinder(radius, height, x, y, z, color){
     'use strict';
 
-    material = new THREE.MeshBasicMaterial({color: 'yellow'})
+    material = new THREE.MeshBasicMaterial({color: color})
     geometry = new THREE.CylinderGeometry(radius, radius, height, 16);
     mesh = new THREE.Mesh(geometry, material);
 
@@ -189,8 +192,8 @@ function createRocket() {
 
     rocket = new THREE.Object3D();
 
-    createCylinder(rocketLength / 4, (3/4) * rocketLength, 0, - rocketLength / 8, 0);
-    createCylinder(rocketLength / 8, rocketLength / 4, 0, (3/8) * rocketLength, 0);
+    createCylinder(rocketLength / 4, (3/4) * rocketLength, 0, - rocketLength / 8, 0, 'yellow');
+    createCylinder(rocketLength / 8, rocketLength / 4, 0, (3/8) * rocketLength, 0, 'red');
     createCapsule(rocketLength / 8, (1/4) * rocketLength, - (3/8) * rocketLength, - rocketLength / 4, 0);
     createCapsule(rocketLength / 8, (1/4) * rocketLength, (3/8) * rocketLength, - rocketLength / 4, 0);
     createCapsule(rocketLength / 8, (1/4) * rocketLength, 0, - rocketLength / 4, - (3/8) * rocketLength);
@@ -213,7 +216,8 @@ function createEnvironment() {
 
     for (var i = 0; i < 7; ++i) { // The debris cannot be overlapped
         createCube();
-        createCone();
+        createCone('red');
+        createPyramid();
     }
 
     // Create Earth
