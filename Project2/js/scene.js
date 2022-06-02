@@ -423,8 +423,8 @@ function animate() {
             rocketLong = 2 * Math.PI;
         }
 
-        crosshairLat = rocketLat + (deltaRocketLat * deltaAngle / norm) * 50;
-        crosshairLong = rocketLong + ((deltaRocketLong * deltaAngle / norm)) * 50 % (2 * Math.PI); 
+        crosshairLat = rocketLat + (deltaRocketLat * deltaAngle / norm) * 200;
+        crosshairLong = rocketLong + ((deltaRocketLong * deltaAngle / norm)) * 200 % (2 * Math.PI); 
 
         crosshair.position.lerp(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong), 0.1);
         //crosshair.position.copy(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
@@ -443,20 +443,23 @@ function animate() {
         removeDebris();
 
     if(usingRocketPerspectiveCamera){
+
         if(norm > 0){
-        cameraLat = rocketLat - (deltaRocketLat * deltaAngle / norm) * 50;
-        cameraLong = rocketLong - ((deltaRocketLong * deltaAngle / norm)) * 50 % (2 * Math.PI);
+            camera.position.copy(convertFromSpherical(spaceRadius + 50, cameraLat, cameraLong)); 
 
-        //camera.position.lerp(convertFromSpherical(spaceRadius + 2000, cameraLat, cameraLong), 0.1);
-        camera.position.copy(convertFromSpherical(spaceRadius + 50, cameraLat, cameraLong)); 
-        camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
+            cameraLat = rocketLat - ((deltaRocketLat * deltaAngle / norm) * 200);
+            cameraLong = rocketLong - (((deltaRocketLong * deltaAngle / norm)) * 200 % (2 * Math.PI));
 
-        console.log(cameraLat, cameraLong);
+            console.log(camera.position);
+
+            camera.position.lerp(convertFromSpherical(spaceRadius + 50, cameraLat, cameraLong), 0.05);
+
+            console.log(camera.position);
         }
         else{
             camera.position.copy(convertFromSpherical(spaceRadius + 50, cameraLat, cameraLong)); 
-            camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
         }
+        camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
     }
 
     rocket.lookAt(crosshair.position);
