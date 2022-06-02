@@ -18,7 +18,7 @@ var decreaseLat, decreaseLong;
 
 var increaseLat, increaseLong;
 
-var rocketLat, rocketLong; // Should it still move after we leave the key up?
+var rocketLat, rocketLong;
 
 var crosshairLat, crosshairLong;
 
@@ -88,7 +88,7 @@ function detectCollision(deltaLat, deltaLong) {
     var vectorEuclidian = convertFromSpherical(spaceRadius, rocketLat + deltaLat, rocketLong + deltaLong);
     for (var i = 0; i < quadrants[quadrant].length; ++i){
         const dist = vectorEuclidian.distanceTo(quadrants[quadrant][i][0]);
-        const radiiSum = rocketLength + quadrants[quadrant][i][1];
+        const radiiSum = rocketLength/2 + quadrants[quadrant][i][1];
         if (dist <= radiiSum){
             collisionDetected = true;
             quadrants[quadrant][i][2] = true;
@@ -108,11 +108,13 @@ function removeDebris() {
     }
 }
 
-function createSphere() {
+function createEarth() {
     'use strict';
 
-    material = new THREE.MeshBasicMaterial({color: 'blue'})
-    geometry = new THREE.SphereGeometry(earthRadius, 16, 16);
+    const texture = new THREE.TextureLoader().load('https://static.wikia.nocookie.net/planet-texture-maps/images/a/aa/Earth_Texture_Full.png/revision/latest?cb=20190401163425');
+
+    material = new THREE.MeshBasicMaterial({map: texture});
+    geometry = new THREE.SphereGeometry(earthRadius, 64, 64);
     mesh = new THREE.Mesh(geometry, material);
     
     var object = new THREE.Object3D();
@@ -207,7 +209,7 @@ function createRocket() {
         rocketLat = getRandomAngle() / 2;
         rocketLong = getRandomAngle();
         setPosition(rocket, rocketLat, rocketLong);
-    } while (isOverlapping(rocketLat, rocketLong, rocketLength));
+    } while (isOverlapping(rocketLat, rocketLong, rocketLength / 2));
 
     scene.add(rocket);
 }
@@ -241,7 +243,7 @@ function createEnvironment() {
     }
 
     // Create Earth
-    createSphere();
+    createEarth();
 
     // Create Rocket
     createRocket();
