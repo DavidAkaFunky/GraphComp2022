@@ -445,10 +445,10 @@ function animate() {
         oldCrosshairLat = crosshairLat;
         oldCrosshairLong = crosshairLong;
 
-        crosshairLat = rocketLat + (deltaRocketLat * deltaAngle / norm) * 50;
-        crosshairLong = rocketLong + ((deltaRocketLong * deltaAngle / norm)) * 50 % (2 * Math.PI); 
+        crosshairLat = rocketLat + (deltaRocketLat * deltaAngle / norm) * 200;
+        crosshairLong = rocketLong + ((deltaRocketLong * deltaAngle / norm)) * 200 % (2 * Math.PI); 
 
-        crosshair.position.copy(lerpFromSpherical(spaceRadius, oldCrosshairLat, oldCrosshairLong, crosshairLat, crosshairLong, 0.6));
+        crosshair.position.copy(lerpFromSpherical(spaceRadius, oldCrosshairLat, oldCrosshairLong, crosshairLat, crosshairLong, 0.1));
     }
     else {
         setPosition(crosshair, crosshairLat, crosshairLong);
@@ -470,7 +470,7 @@ function animate() {
         cameraLat = rocketLat - (deltaRocketLat * deltaAngle / norm) * 100;
         cameraLong = rocketLong - ((deltaRocketLong * deltaAngle / norm)) * 100 % (2 * Math.PI);
 
-        camera.position.copy(lerpFromSpherical(spaceRadius + 20, oldCameraLat, oldCameraLong, cameraLat, cameraLong, 0.6));
+        camera.position.copy(lerpFromSpherical(spaceRadius + 20, oldCameraLat, oldCameraLong, cameraLat, cameraLong, 0.1));
         camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
         }
         else{
