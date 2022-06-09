@@ -6,13 +6,17 @@ var material, geometry, mesh;
 
 var clock;
 
-var usingFixedOrthogonalCamera, usingFixedPerspectiveCamera, usingRocketPerspectiveCamera;
+var usingFixedOrthographicCamera, usingFixedPerspectiveCamera, usingRocketPerspectiveCamera;
 
 const earthRadius = 50;
 
 const spaceRadius = 1.2 * earthRadius;
 
 const rocketLength = earthRadius / 11;
+
+const camFactor = 0.1;
+
+var changedCamera;
 
 var decreaseLat, decreaseLong;
 
@@ -27,8 +31,6 @@ var quadrants;
 var collisionDetected;
 
 var rocket;
-
-var crosshair;
 
 var cameraLat, cameraLong;
 
@@ -92,7 +94,7 @@ function detectCollision(deltaLat, deltaLong) {
     var vectorEuclidian = convertFromSpherical(spaceRadius, rocketLat + deltaLat, rocketLong + deltaLong);
     for (var i = 0; i < quadrants[quadrant].length; ++i){
         const dist = vectorEuclidian.distanceTo(quadrants[quadrant][i][0]);
-        const radiiSum = rocketLength/2 + quadrants[quadrant][i][1];
+        const radiiSum = rocketLength / 2 + quadrants[quadrant][i][1];
         if (dist <= radiiSum){
             collisionDetected = true;
             quadrants[quadrant][i][2] = true;
@@ -218,23 +220,6 @@ function createRocket() {
     scene.add(rocket);
 }
 
-function createCrosshair() {
-    'use strict';
-
-    crosshair = new THREE.Object3D();
-
-    material = new THREE.MeshBasicMaterial({color: 'purple'});
-    geometry = new THREE.BoxGeometry(2, 2, 2);
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(0, 0, 0);
-
-    setPosition(crosshair, rocketLat, rocketLong);
-
-    crosshair.add(mesh);
-
-    scene.add(crosshair);
-}
-
 function createEnvironment() {
     'use strict';
 
@@ -252,20 +237,18 @@ function createEnvironment() {
     // Create Rocket
     createRocket();
 
-    // Create Crosshair
-    createCrosshair();
-
 }
 
-function useFixedOrthogonalCamera() {
+function useFixedOrthographicCamera() {
     'use strict';
 
-    camera = new THREE.OrthographicCamera(-window.innerWidth / 10,
-                                          window.innerWidth / 10,
-                                          window.innerHeight / 10,
-                                          -window.innerHeight / 10,
-                                          -1000,
+    camera = new THREE.OrthographicCamera(- 65 * window.innerWidth / window.innerHeight,
+                                          65 * window.innerWidth / window.innerHeight,
+                                          65,
+                                          - 65,
+                                          - 1000,
                                           1000);
+        
 
     camera.position.set(0, 0, 0);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -283,19 +266,33 @@ function useFixedPerspectiveCamera() {
 
 function useRocketPerspectiveCamera() {
     'use strict';
-    camera = new THREE.PerspectiveCamera(60,
+    camera = new THREE.PerspectiveCamera(80,
                                          window.innerWidth / window.innerHeight,
                                          1,
                                          1000);
+    
+    camera.position.copy(convertFromSpherical(spaceRadius + 30, cameraLat, cameraLong));
+    camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
+}
+
+function onResizeOrthographicCamera() {
+    'use strict';
+
+    camera.left = - 65 * window.innerWidth / window.innerHeight;
+    camera.right = 65 * camera.aspect;
+    camera.top = 65;
+    camera.bottom = - 65;
 }
 
 function onResize() {
     'use strict';
-
+    
     renderer.setSize(window.innerWidth, window.innerHeight);
-
     if (window.innerHeight > 0 && window.innerWidth > 0) {
         camera.aspect = window.innerWidth / window.innerHeight;
+        if (usingFixedOrthographicCamera){
+            onResizeOrthographicCamera();
+        }
         camera.updateProjectionMatrix();
     }
 
@@ -307,17 +304,20 @@ function onKeyDown(e) {
     // Choose camera (should it be given a flag to update the camera in animate()?)
 
     if (e.keyCode == 49) {  // 1
-        usingFixedOrthogonalCamera = true;
+        changedCamera = true;
+        usingFixedOrthographicCamera = true;
         usingFixedPerspectiveCamera = false;
         usingRocketPerspectiveCamera = false;
     }
     else if (e.keyCode == 50) {  // 2
-        usingFixedOrthogonalCamera = false;
+        changedCamera = true;
+        usingFixedOrthographicCamera = false;
         usingFixedPerspectiveCamera = true;
         usingRocketPerspectiveCamera = false;
     }
     else if (e.keyCode == 51) {  // 3
-        usingFixedOrthogonalCamera = false;
+        changedCamera = true;
+        usingFixedOrthographicCamera = false;
         usingFixedPerspectiveCamera = false;
         usingRocketPerspectiveCamera = true;
     }
@@ -359,6 +359,10 @@ function resetUpdateFlags(){
     decreaseLat = false;   increaseLat = false;
     decreaseLong = false;  increaseLong = false;
     collisionDetected = false;
+    changedCamera = true;
+    usingFixedOrthographicCamera = true;
+    usingFixedPerspectiveCamera = false;
+    usingRocketPerspectiveCamera = false;
 }
 
 function render() {
@@ -378,7 +382,9 @@ function init() {
     quadrants = [[], [], [], []];
     createEnvironment();
     resetUpdateFlags();
-    usingFixedOrthogonalCamera = true;
+
+    crosshairLat = cameraLat = rocketLat;
+    crosshairLong = cameraLong = rocketLong;
 
     clock = new THREE.Clock();
 
@@ -390,8 +396,8 @@ function init() {
 function chooseCameraMode(){
     'use strict';
 
-    if (usingFixedOrthogonalCamera)
-        useFixedOrthogonalCamera();
+    if (usingFixedOrthographicCamera)
+        useFixedOrthographicCamera();
     else if (usingFixedPerspectiveCamera)
         useFixedPerspectiveCamera();
     else if (usingRocketPerspectiveCamera)
@@ -400,8 +406,6 @@ function chooseCameraMode(){
 
 function animate() {
     'use strict';
-
-    chooseCameraMode();
     
     const deltaClock = clock.getDelta();
     const deltaAngle = Math.PI * deltaClock / 10; 
@@ -421,6 +425,7 @@ function animate() {
         else if (rocketLat > Math.PI){
             rocketLat = Math.PI;
         }
+
         if (rocketLong < 0){
             rocketLong = 2 * Math.PI;
         }
@@ -430,11 +435,6 @@ function animate() {
         crosshairLat = rocketLat + (deltaRocketLat * 0.2 / norm);
         crosshairLong = rocketLong + ((deltaRocketLong * 0.2 / norm)) % (2 * Math.PI); 
 
-        //crosshair.position.lerp(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong), Math.max(deltaClock * 20, 1));
-        crosshair.position.copy(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
-    }
-    else {
-        setPosition(crosshair, crosshairLat, crosshairLong);
     }
 
     setPosition(rocket, rocketLat, rocketLong);    
@@ -442,33 +442,25 @@ function animate() {
 
     if (norm > 0){
         rocket.position.copy(detectCollision(deltaRocketLat * deltaAngle / norm, deltaRocketLong * deltaAngle / norm));
+        cameraLat = rocketLat - ((deltaRocketLat * 0.2 / norm));
+        cameraLong = rocketLong - (((deltaRocketLong * 0.2 / norm)) % (2 * Math.PI));
+        if (usingRocketPerspectiveCamera){
+            camera.position.copy(convertFromSpherical(spaceRadius + 30, cameraLat, cameraLong));
+            camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
+        }
     }
     if (collisionDetected)
         removeDebris();
 
-    if(usingRocketPerspectiveCamera){
-
-        if(norm > 0){
-            //camera.position.copy(convertFromSpherical(spaceRadius + 30, cameraLat, cameraLong)); 
-            cameraLat = rocketLat - ((deltaRocketLat * 0.2 / norm));
-            cameraLong = rocketLong - (((deltaRocketLong * 0.2 / norm)) % (2 * Math.PI));
-
-            //camera.position.lerp(convertFromSpherical(spaceRadius + 30, cameraLat, cameraLong), 0.5);
-            //camera.lookAt(lookAtVector.lerp(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong), 0.05));
-        }
-        else{
-            //camera.position.copy(convertFromSpherical(spaceRadius + 30, cameraLat, cameraLong)); 
-            //camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
-        }
-        camera.position.copy(convertFromSpherical(spaceRadius + 30, cameraLat, cameraLong));
-        camera.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
-
-    }
-
-    rocket.lookAt(crosshair.position);
+    rocket.lookAt(convertFromSpherical(spaceRadius, crosshairLat, crosshairLong));
     rocket.rotateX(Math.PI / 2);
 
     collisionDetected = false;
+
+    if (changedCamera){
+        chooseCameraMode();
+        changedCamera = false;
+    }
 
     render();
 
