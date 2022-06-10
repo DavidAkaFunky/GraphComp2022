@@ -6,60 +6,110 @@ var material, geometry, mesh;
 
 var clock;
 
-var object1;
+var firstStage, secondStage, thirdStage;
 
+var increaseAngleFirstStage, decreaseAngleFirstStage, increaseAngleSecondStage, decreaseAngleSecondStage, increaseAngleThirdStage, decreaseAngleThirdStage;
+
+var firstSpotlight, secondSpotlight, thirdSpotlight, globalLight;
+
+var firstSpotlightOn, secondSpotlightOn, thirdSpotlightOn, globalLightOn;
+
+var lambertMaterial, phongMaterial;
+
+var shadingMode, illuminationCalculation;
+
+var perpsectiveCamera, orthographicCamera;
+
+var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
 
 function createScene() {
     'use strict';
 
     scene = new THREE.Scene();
 
-    // scene.background = new THREE.Color( 0xD5B895 );
+    scene.add(new THREE.AxesHelper(50));
 
-    scene.add(new THREE.AxisHelper(50));
-
-    object1 = new THREE.Object3D();
-
-    scene.add(object1);
+    createFloor();
+    createFirstStage();
+    createSecondStage();
+    createThirdStage();
+    createSpotlights();
+    createGlobalLight();
 }
 
-function createCamera() {
-    camera = new THREE.OrthographicCamera(-window.innerWidth / 20,
-                                          window.innerWidth / 20,
-                                          window.innerHeight / 20,
-                                          -window.innerHeight / 20,
-                                          -1000,
-                                          1000);
+function createFloor(){
+
 }
 
-function useFrontViewCamera() {
-    'use strict';
+function createPodium(){
 
-    camera.position.set(0, 27, 80);
-    camera.lookAt(new THREE.Vector3(0, 27, 0));
 }
 
-function useTopViewCamera() {
-    'use strict';
+function createFirstStage(){
+    // createPodium(coordinates);
+    // scene.add(firstStage);
+}
+
+function createSecondStage(){
+    // createPodium(coordinates);
+    // scene.add(secondStage);
+}
+
+function createThirdStage(){
+    // createPodium(coordinates);
+    // scene.add(thirdStage);
+}
+
+function createSpotlights(){
     
-    camera.position.set(22, 80, 0);
-    camera.lookAt(new THREE.Vector3(22, 0, 0));
 }
 
-function useSideViewCamera() {
+function createGlobalLight(){
+
+}
+
+function createPerspectiveCamera() {
+    'use strict';
+    perpsectiveCamera = new THREE.PerspectiveCamera(60,
+                                                    window.innerWidth / window.innerHeight,
+                                                    1,
+                                                    1000);
+                                                    
+    perpsectiveCamera.position.set(0, 50, 20);
+    perpsectiveCamera.lookAt(new THREE.Vector3(0, 50, 0));
+}
+
+function createOrthographicCamera() {
+    'use strict';
+    orthographicCamera = new THREE.OrthographicCamera(- 65 * window.innerWidth / window.innerHeight,
+                                                      65 * window.innerWidth / window.innerHeight,
+                                                      65,
+                                                      - 65,
+                                                      - 1000,
+                                                      1000);
+        
+    orthographicCamera.position.set(0, 50, 20);
+    orthographicCamera.lookAt(new THREE.Vector3(0, 50, 0));
+}
+
+function onResizeOrthographicCamera() {
     'use strict';
 
-    camera.position.set(0, 27, 0);
-    camera.lookAt(new THREE.Vector3(-40, 27, 0));
+    camera.left = - 65 * window.innerWidth / window.innerHeight;
+    camera.right = 65 * camera.aspect;
+    camera.top = 65;
+    camera.bottom = - 65;
 }
 
 function onResize() {
     'use strict';
-
+    
     renderer.setSize(window.innerWidth, window.innerHeight);
-
     if (window.innerHeight > 0 && window.innerWidth > 0) {
         camera.aspect = window.innerWidth / window.innerHeight;
+        if (usingOrthographicCamera){
+            onResizeOrthographicCamera();
+        }
         camera.updateProjectionMatrix();
     }
 
@@ -68,47 +118,62 @@ function onResize() {
 function onKeyDown(e) {
     'use strict';
 
-    // Choose camera (should it be given a flag to update the camera in animate()?)
+    // Choose camera
     if (e.keyCode == 49) {  // 1
         changedCamera = true;
-        usingFrontViewCamera = true;
-        usingTopViewCamera = false;
+        usingPerspectiveCamera = true;
+        usingOrthographicCamera = false;
     }
     else if (e.keyCode == 50) {  // 2
         changedCamera = true;
-        usingFrontViewCamera = false;
-        usingTopViewCamera = true;
+        usingPerspectiveCamera = false;
+        usingOrthographicCamera = true;
     }
 
     // Rotate origami figures
     if (e.keyCode == 81 || e.keyCode == 113)  // Q, q
+        increaseAngleFirstStage = true;
 
     if (e.keyCode == 87 || e.keyCode == 119)  // W, w
+        decreaseAngleFirstStage = true;
 
     if (e.keyCode == 69 || e.keyCode == 101)  // E, e
+        increaseAngleSecondStage = true;
 
     if (e.keyCode == 82 || e.keyCode == 114)  // R, r
+        decreaseAngleSecondStage = true;
 
     if (e.keyCode == 84 || e.keyCode == 116)  // T, t
+        increaseAngleThirdStage = true;
 
     if (e.keyCode == 89 || e.keyCode == 121)  // Y, y
+        decreaseAngleThirdStage = true;
 
         
     // Shading mode
-    if (e.keyCode == 65 || e.keyCode == 97)  // A, a
+    if (e.keyCode == 65 || e.keyCode == 97)   // A, a
+        shadingMode = !shadingMode;
+
 
     // Illumination calculation
     if (e.keyCode == 83 || e.keyCode == 115)  // S, s
+        illuminationCalculation = !illuminationCalculation;
     
-    // Turn directional light on/off
+
+    // Turn spotlights on/off
     if (e.keyCode == 90 || e.keyCode == 122)  // Z, z
+        firstSpotlightOn = !firstSpotlightOn;
 
     if (e.keyCode == 88 || e.keyCode == 120)  // X, x
+        secondSpotlightOn = !secondSpotlightOn;
 
-    if (e.keyCode == 67 || e.keyCode == 99)  // C, c
+    if (e.keyCode == 67 || e.keyCode == 99)   // C, c
+        thirdSpotlightOn = !thirdSpotlightOn;
 
-    // Turn spotlight on/off
+
+    // Turn global directional light on/off
     if (e.keyCode == 68 || e.keyCode == 100)  // D, d
+        globalLightOn = !globalLightOn;
 
 }
 
@@ -117,39 +182,40 @@ function onKeyUp(e) {
 
     // Rotate origami figures
     if (e.keyCode == 81 || e.keyCode == 113)  // Q, q
+        increaseAngleFirstStage = false;
 
     if (e.keyCode == 87 || e.keyCode == 119)  // W, w
+        decreaseAngleFirstStage = false;
 
     if (e.keyCode == 69 || e.keyCode == 101)  // E, e
+        increaseAngleSecondStage = false;
 
     if (e.keyCode == 82 || e.keyCode == 114)  // R, r
+        decreaseAngleSecondStage = false;
 
     if (e.keyCode == 84 || e.keyCode == 116)  // T, t
+        increaseAngleThirdStage = false;
 
     if (e.keyCode == 89 || e.keyCode == 121)  // Y, y
-
-        
-    // Shading mode
-    if (e.keyCode == 65 || e.keyCode == 97)  // A, a
-
-    // Illumination calculation
-    if (e.keyCode == 83 || e.keyCode == 115)  // S, s
-    
-    // Turn directional light on/off
-    if (e.keyCode == 90 || e.keyCode == 122)  // Z, z
-
-    if (e.keyCode == 88 || e.keyCode == 120)  // X, x
-
-    if (e.keyCode == 67 || e.keyCode == 99)  // C, c
-
-    // Turn spotlight on/off
-    if (e.keyCode == 68 || e.keyCode == 100)  // D, d
-
+        decreaseAngleThirdStage = false;
 }
 
 function resetUpdateFlags(){
     'use strict';
-
+    increaseAngleFirstStage = false;
+    decreaseAngleFirstStage = false;
+    increaseAngleSecondStage = false;
+    decreaseAngleSecondStage = false;
+    increaseAngleThirdStage = false;
+    decreaseAngleThirdStage = false;
+    changedCamera = true;
+    usingPerspectiveCamera = true;
+    shadingMode = true;
+    illuminationCalculation = true;
+    firstSpotlight = true;
+    secondSpotlight = true;
+    thirdSpotlight = true;
+    globalLight = true;
 }
 
 function render() {
@@ -168,7 +234,8 @@ function init() {
 
     createScene();
     resetUpdateFlags();
-    createCamera();
+    createPerspectiveCamera();
+    createOrthographicCamera();
 
     clock = new THREE.Clock();
 
@@ -180,14 +247,24 @@ function init() {
 function chooseCameraMode(){
     'use strict';
 
+    if (usingPerspectiveCamera)
+        camera = perpsectiveCamera;
+    else if (usingOrthographicCamera)
+        camera = orthographicCamera;
 }
 
 function animate() {
     'use strict';
-
-    chooseCameraMode();
-
+    
     const deltaClock = clock.getDelta();
+    const deltaAngle = Math.PI * deltaClock / 10; 
+
+    // TODO: Implement rotations
+
+    if (changedCamera){
+        chooseCameraMode();
+        changedCamera = false;
+    }
 
     render();
 
