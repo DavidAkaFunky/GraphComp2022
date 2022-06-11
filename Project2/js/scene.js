@@ -121,7 +121,7 @@ function createEarth() {
 
     material = new THREE.MeshBasicMaterial({map: texture});
     geometry = new THREE.SphereGeometry(earthRadius, 64, 64);
-    mesh = new THREE.Mesh(geometryd, material);
+    mesh = new THREE.Mesh(geometry, material);
     
     var object = new THREE.Object3D();
     object.add(mesh);

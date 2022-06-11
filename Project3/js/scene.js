@@ -2,7 +2,7 @@
 
 var camera, scene, renderer;
 
-var material, geometry, mesh;
+var material, geometry, mesh, vertices;
 
 var clock;
 
@@ -22,7 +22,7 @@ var perpsectiveCamera, orthographicCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
 
-const sheetDiagonal = 100;
+const sheetDiagonal = 20;
 
 function createScene() {
     'use strict';
@@ -47,22 +47,46 @@ function createPodium(){
 
 }
 
+function createFirstStageFace(vertices, material){
+
+    //const texture = new THREE.TextureLoader().load('https://www.3dwallpaperarts.com/wp-content/uploads/2021/05/ahegao-wallpaper-0043-1536x864.jpg');
+    //material = new THREE.MeshBasicMaterial({map: texture});
+    geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+    mesh = new THREE.Mesh(geometry, material);
+    firstStage.add(mesh);
+}
+
 function createFirstStage(){
+    'use strict';
     // createPodium(coordinates);
 
-    // TODO: Not working!
-    const vertices = new Float32Array([0, - sheetDiagonal / 2, - sheetDiagonal / 100,
-                                       sheetDiagonal / 2, 0, sheetDiagonal / 100,
-                                       0, sheetDiagonal / 2, - sheetDiagonal / 100,
-                                       0, sheetDiagonal / 2, - sheetDiagonal / 100,
-                                       - sheetDiagonal / 2, 0, sheetDiagonal / 100,
-                                       0, - sheetDiagonal / 2, - sheetDiagonal / 100]);
+    firstStage = new THREE.Object3D();
+
+    vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
+                                 sheetDiagonal / 2, 0, 1,
+                                 0, sheetDiagonal / 2, -1,
+ 
+                                 0, sheetDiagonal / 2, -1,
+                                 - sheetDiagonal / 2, 0, 1,
+                                 0, - sheetDiagonal / 2, -1]);
     
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
-    material = new THREE.MeshBasicMaterial( { color: "red" } );
-    mesh = new THREE.Mesh( geometry, material );
-    scene.add(mesh);
+    material = new THREE.MeshLambertMaterial({color: "white"});
+    createFirstStageFace(vertices, material);
+
+    vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
+                                 - sheetDiagonal / 2, 0, 1,
+                                 0, sheetDiagonal / 2, -1,
+                                 
+                                 0, sheetDiagonal / 2, -1,
+                                 sheetDiagonal / 2, 0, 1,
+                                 0, - sheetDiagonal / 2, -1]);
+
+    const texture = new THREE.TextureLoader().load('https://cdn.cmjornal.pt/images/2015-06/img_1200x900$2015_06_12_11_31_00_467349.jpg');
+    material = new THREE.MeshBasicMaterial({map: texture});
+    createFirstStageFace(vertices, material);
+    scene.add(firstStage);
 }
 
 function createSecondStage(){
@@ -80,7 +104,15 @@ function createSpotlights(){
 }
 
 function createGlobalLight(){
-
+    // TODO: Still not working!
+    
+    globalLight = new THREE.DirectionalLight("white", 1);
+    globalLight.position.set(50, 0, 0);
+    // globalLight.rotation.set(0, 0, - Math.PI / 4);
+    globalLight.target = firstStage;
+    const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
+    scene.add(spotter);
+    scene.add(globalLight);
 }
 
 function createPerspectiveCamera() {
@@ -90,7 +122,7 @@ function createPerspectiveCamera() {
                                                     1,
                                                     1000);
                                                     
-    perpsectiveCamera.position.set(0, 0, 0);
+    perpsectiveCamera.position.set(0, 0, 50);
     perpsectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
@@ -103,7 +135,7 @@ function createOrthographicCamera() {
                                                       - 1000,
                                                       1000);
         
-    orthographicCamera.position.set(0, 0, 0);
+    orthographicCamera.position.set(0, 0, 50);
     orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
@@ -272,14 +304,17 @@ function animate() {
     'use strict';
     
     const deltaClock = clock.getDelta();
-    const deltaAngle = Math.PI * deltaClock / 10; 
+    const deltaAngle = Math.PI * deltaClock / 2; 
 
-    // TODO: Implement rotations
+    // TODO: Implement global light intensity
+    // globalLightOn ? globalLight.intensity = 0.5 : globalLight.intensity = 0;
 
     if (changedCamera){
         chooseCameraMode();
         changedCamera = false;
     }
+
+    firstStage.rotateY((increaseAngleFirstStage - decreaseAngleFirstStage) * deltaAngle);
 
     render();
 
