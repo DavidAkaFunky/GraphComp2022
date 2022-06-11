@@ -52,9 +52,9 @@ function createFirstStage(){
 
     // TODO: Not working!
     const vertices = new Float32Array([0, - sheetDiagonal / 2, - sheetDiagonal / 100,
-                                       0,   sheetDiagonal / 2, - sheetDiagonal / 100,
                                        sheetDiagonal / 2, 0, sheetDiagonal / 100,
-                                       0, - sheetDiagonal / 2, - sheetDiagonal / 100,
+                                       0, sheetDiagonal / 2, - sheetDiagonal / 100,
+                                       0, sheetDiagonal / 2, - sheetDiagonal / 100,
                                        - sheetDiagonal / 2, 0, sheetDiagonal / 100,
                                        0, - sheetDiagonal / 2, - sheetDiagonal / 100]);
     
