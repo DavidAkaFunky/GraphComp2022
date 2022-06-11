@@ -22,6 +22,8 @@ var perpsectiveCamera, orthographicCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
 
+const sheetDiagonal = 100;
+
 function createScene() {
     'use strict';
 
@@ -47,17 +49,30 @@ function createPodium(){
 
 function createFirstStage(){
     // createPodium(coordinates);
-    // scene.add(firstStage);
+
+    // TODO: Not working!
+    const vertices = new Float32Array([0, - sheetDiagonal / 2, - sheetDiagonal / 100,
+                                       0,   sheetDiagonal / 2, - sheetDiagonal / 100,
+                                       sheetDiagonal / 2, 0, sheetDiagonal / 100,
+                                       0, - sheetDiagonal / 2, - sheetDiagonal / 100,
+                                       - sheetDiagonal / 2, 0, sheetDiagonal / 100,
+                                       0, - sheetDiagonal / 2, - sheetDiagonal / 100]);
+    
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    material = new THREE.MeshBasicMaterial( { color: "red" } );
+    mesh = new THREE.Mesh( geometry, material );
+    scene.add(mesh);
 }
 
 function createSecondStage(){
     // createPodium(coordinates);
-    // scene.add(secondStage);
+    // scene.add(secondStage, coordinates);
 }
 
 function createThirdStage(){
     // createPodium(coordinates);
-    // scene.add(thirdStage);
+    // scene.add(thirdStage, coordinates);
 }
 
 function createSpotlights(){
@@ -75,8 +90,8 @@ function createPerspectiveCamera() {
                                                     1,
                                                     1000);
                                                     
-    perpsectiveCamera.position.set(0, 50, 20);
-    perpsectiveCamera.lookAt(new THREE.Vector3(0, 50, 0));
+    perpsectiveCamera.position.set(0, 0, 0);
+    perpsectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
 function createOrthographicCamera() {
@@ -88,8 +103,8 @@ function createOrthographicCamera() {
                                                       - 1000,
                                                       1000);
         
-    orthographicCamera.position.set(0, 50, 20);
-    orthographicCamera.lookAt(new THREE.Vector3(0, 50, 0));
+    orthographicCamera.position.set(0, 0, 0);
+    orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
 function onResizeOrthographicCamera() {
