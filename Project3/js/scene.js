@@ -22,6 +22,8 @@ var perpsectiveCamera, orthographicCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
 
+var spotlightHelper;
+
 const sheetDiagonal = 25;
 
 const podiumWidth = 150, podiumHeight = 30, podiumDepth = 100;
@@ -37,7 +39,7 @@ function createScene() {
     createFirstStage();
     createSecondStage();
     createThirdStage();
-    createGlobalLight();
+    //createGlobalLight();
 }
 
 function createPodium(){
@@ -120,20 +122,22 @@ function createSpotlight(spotlight, object, x, y, z){
     spotlight = new THREE.SpotLight(new THREE.Color("white"), 10, 2*y, Math.PI / 6, 0.25, 0);
     spotlight.position.set(x, y, z);
     spotlight.castShadow = true;
+
     spotlight.target = object; //why the fuck is this not working
  
 
     scene.add(spotlight);
+    scene.add(spotlight.target);
 
 
-    const spotter = new THREE.SpotLightHelper(spotlight);
-    scene.add(spotter);
+    spotlightHelper = new THREE.SpotLightHelper(spotlight);
+    scene.add(spotlightHelper);
 }
 
 function createGlobalLight(){
     'use strict';
     globalLight = new THREE.DirectionalLight("red", 5);
-    globalLight.position.set(0, 100, 10);
+    globalLight.position.set(20, 100, 20);
     const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
     scene.add(spotter);
     scene.add(globalLight);
@@ -351,5 +355,8 @@ function animate() {
 
     render();
 
+    spotlightHelper.update();
+
     requestAnimationFrame(animate);
+
 }
