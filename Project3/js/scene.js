@@ -22,7 +22,9 @@ var perpsectiveCamera, orthographicCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
 
-const sheetDiagonal = 20;
+const sheetDiagonal = 25;
+
+const podiumWidth = 150, podiumHeight = 30, podiumDepth = 100;
 
 function createScene() {
     'use strict';
@@ -31,20 +33,29 @@ function createScene() {
 
     scene.add(new THREE.AxesHelper(50));
 
-    createFloor();
+    createPodium();
     createFirstStage();
     createSecondStage();
     createThirdStage();
-    createSpotlights();
-    createGlobalLight();
-}
-
-function createFloor(){
-
+    //createGlobalLight();
 }
 
 function createPodium(){
+    createParallelepiped(podiumWidth, podiumHeight, podiumDepth, 0, 0, 0);
+    createParallelepiped(podiumWidth, 2 * podiumHeight / 3, 10, 0, - podiumHeight / 6, podiumDepth / 2 + 5);
+    createParallelepiped(podiumWidth, podiumHeight / 3, 10, 0, - podiumHeight / 3, podiumDepth / 2 + 15);
+}
 
+function createParallelepiped(width, height, depth, x, y, z){
+    'use strict';
+
+    material = new THREE.MeshBasicMaterial({ color: 0x00FFFF, wireframe: true });
+    geometry = new THREE.BoxGeometry(width, height, depth);
+    mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(x, y, z);
+
+    scene.add(mesh);
 }
 
 function createFirstStageFace(vertices, material){
@@ -60,7 +71,6 @@ function createFirstStageFace(vertices, material){
 
 function createFirstStage(){
     'use strict';
-    // createPodium(coordinates);
 
     firstStage = new THREE.Object3D();
 
@@ -72,7 +82,7 @@ function createFirstStage(){
                                  - sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
     
-    material = new THREE.MeshLambertMaterial({color: "white"});
+    material = new THREE.MeshLambertMaterial({color: "red"});
     createFirstStageFace(vertices, material);
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
@@ -83,28 +93,43 @@ function createFirstStage(){
                                  sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
 
-    const texture = new THREE.TextureLoader().load('https://cdn.cmjornal.pt/images/2015-06/img_1200x900$2015_06_12_11_31_00_467349.jpg');
-    material = new THREE.MeshBasicMaterial({map: texture});
+    material = new THREE.MeshBasicMaterial({color: "blue"});
     createFirstStageFace(vertices, material);
+
+    createSpotlight(firstSpotlight, - podiumWidth / 3, 20, 0);
+    firstStage.position.set(- podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
     scene.add(firstStage);
 }
 
 function createSecondStage(){
-    // createPodium(coordinates);
+    // createSpotlight(secondSpotlight, ??, ??, ??)
     // scene.add(secondStage, coordinates);
 }
 
 function createThirdStage(){
-    // createPodium(coordinates);
+    // createSpotlight(thirdSpotlight, ??, ??, ??)
     // scene.add(thirdStage, coordinates);
 }
 
-function createSpotlights(){
-    
+function createSpotlight(spotlight, x, y, z){
+    spotlight = new THREE.SpotLight("white");
+    spotlight.position.set(x, y, z);
+
+    spotlight.castShadow = true;
+
+    spotlight.shadow.mapSize.width = 1024;
+    spotlight.shadow.mapSize.height = 1024;
+
+    spotlight.shadow.camera.near = 500;
+    spotlight.shadow.camera.far = 4000;
+    spotlight.shadow.camera.fov = 30;
+
+    const spotter = new THREE.SpotLightHelper(spotlight, 10);
+    scene.add(spotter);
+    scene.add(spotlight);
 }
 
 function createGlobalLight(){
-    // TODO: Still not working!
     
     globalLight = new THREE.DirectionalLight("white", 1);
     globalLight.position.set(50, 0, 0);
@@ -122,7 +147,7 @@ function createPerspectiveCamera() {
                                                     1,
                                                     1000);
                                                     
-    perpsectiveCamera.position.set(0, 0, 50);
+    perpsectiveCamera.position.set(0, 20, 200);
     perpsectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
