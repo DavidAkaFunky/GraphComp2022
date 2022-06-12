@@ -100,9 +100,8 @@ function createFirstStage(){
     material = new THREE.MeshLambertMaterial({color: "red"});
     createFirstStageFace(vertices, material);
 
-    
-    createSpotlight(firstSpotlight, firstStage, 0, 50, -20); // 
     firstStage.position.set(- podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
+    createSpotlight(firstSpotlight, firstStage, - podiumWidth / 3, podiumHeight, 30);
     scene.add(firstStage);
 }
 
@@ -118,11 +117,14 @@ function createThirdStage(){
 
 function createSpotlight(spotlight, object, x, y, z){
     'use strict';
-    spotlight = new THREE.SpotLight(new THREE.Color("white"), 5, 2*y, Math.PI / 6, 0.25, 0);
+    spotlight = new THREE.SpotLight(new THREE.Color("white"), 10, 2*y, Math.PI / 6, 0.25, 0);
     spotlight.position.set(x, y, z);
     spotlight.castShadow = true;
+    spotlight.target = object; //why the fuck is this not working
+ 
 
-    object.add(spotlight);
+    scene.add(spotlight);
+
 
     const spotter = new THREE.SpotLightHelper(spotlight);
     scene.add(spotter);
@@ -130,8 +132,8 @@ function createSpotlight(spotlight, object, x, y, z){
 
 function createGlobalLight(){
     'use strict';
-    globalLight = new THREE.DirectionalLight("red", 10);
-    globalLight.position.set(0, 100, 0);
+    globalLight = new THREE.DirectionalLight("red", 5);
+    globalLight.position.set(0, 100, 10);
     const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
     scene.add(spotter);
     scene.add(globalLight);
