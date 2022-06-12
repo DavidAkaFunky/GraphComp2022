@@ -39,7 +39,7 @@ function createScene() {
     createFirstStage();
     createSecondStage();
     createThirdStage();
-    //createGlobalLight();
+    createGlobalLight();
 }
 
 function createPodium(){
@@ -103,7 +103,7 @@ function createFirstStage(){
     createFirstStageFace(vertices, material);
 
     firstStage.position.set(- podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
-    createSpotlight(firstSpotlight, firstStage, - podiumWidth / 3, podiumHeight, 30);
+    firstSpotlight = createSpotlight(firstSpotlight, firstStage, - podiumWidth / 3, podiumHeight, 30);
     scene.add(firstStage);
 }
 
@@ -125,19 +125,19 @@ function createSpotlight(spotlight, object, x, y, z){
 
     spotlight.target = object; //why the fuck is this not working
  
-
     scene.add(spotlight);
     scene.add(spotlight.target);
 
-
     spotlightHelper = new THREE.SpotLightHelper(spotlight);
     scene.add(spotlightHelper);
+
+    return spotlight;
 }
 
 function createGlobalLight(){
     'use strict';
-    globalLight = new THREE.DirectionalLight("red", 5);
-    globalLight.position.set(20, 100, 20);
+    globalLight = new THREE.DirectionalLight("white", 5);
+    globalLight.position.set(50, 100, 35);
     const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
     scene.add(spotter);
     scene.add(globalLight);
@@ -296,10 +296,10 @@ function resetUpdateFlags(){
     usingPerspectiveCamera = true;
     shadingMode = true;
     illuminationCalculation = true;
-    firstSpotlight = true;
-    secondSpotlight = true;
-    thirdSpotlight = true;
-    globalLight = true;
+    firstSpotlightOn = true;
+    secondSpotlightOn = true;
+    thirdSpotlightOn = true;
+    globalLightOn = true;
 }
 
 function render() {
@@ -337,14 +337,21 @@ function chooseCameraMode(){
         camera = orthographicCamera;
 }
 
+function checkToggles(){
+    globalLightOn ? globalLight.intensity = 0.7 : globalLight.intensity = 0;
+
+    firstSpotlightOn ? firstSpotlight.intensity = 0.7 : firstSpotlight.intensity = 0;
+
+    //secondSpotlightOn ? secondSpotlight.intensity = 0.7 : secondSpotlight.intensity = 0;
+
+    //thirdSpotlightOn ? thirdSpotlight.intensity = 0.7 : thirdSpotlight.intensity = 0;
+}
+
 function animate() {
     'use strict';
     
     const deltaClock = clock.getDelta();
     const deltaAngle = Math.PI * deltaClock / 2; 
-
-    // TODO: Implement global light intensity
-    // globalLightOn ? globalLight.intensity = 0.5 : globalLight.intensity = 0;
 
     if (changedCamera){
         chooseCameraMode();
@@ -352,6 +359,8 @@ function animate() {
     }
 
     firstStage.rotateY((increaseAngleFirstStage - decreaseAngleFirstStage) * deltaAngle);
+
+    checkToggles();
 
     render();
 
