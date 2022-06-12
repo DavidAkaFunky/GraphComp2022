@@ -6,7 +6,7 @@ var material, geometry, mesh, vertices;
 
 var clock;
 
-var firstStage, secondStage, thirdStage;
+var firstStage, secondStage, thirdStage, podium;
 
 var increaseAngleFirstStage, decreaseAngleFirstStage, increaseAngleSecondStage, decreaseAngleSecondStage, increaseAngleThirdStage, decreaseAngleThirdStage;
 
@@ -14,7 +14,7 @@ var firstSpotlight, secondSpotlight, thirdSpotlight, globalLight;
 
 var firstSpotlightOn, secondSpotlightOn, thirdSpotlightOn, globalLightOn;
 
-var lambertMaterial, phongMaterial;
+var lambertSimpleMaterial, lambertTexturedMaterial, phongSimpleMaterial, phongTexturedMaterial;
 
 var shadingMode, illuminationCalculation;
 
@@ -37,35 +37,39 @@ function createScene() {
     createFirstStage();
     createSecondStage();
     createThirdStage();
-    //createGlobalLight();
+    createGlobalLight();
 }
 
 function createPodium(){
+    podium = new THREE.Object3D();
     createParallelepiped(podiumWidth, podiumHeight, podiumDepth, 0, 0, 0);
     createParallelepiped(podiumWidth, 2 * podiumHeight / 3, 10, 0, - podiumHeight / 6, podiumDepth / 2 + 5);
     createParallelepiped(podiumWidth, podiumHeight / 3, 10, 0, - podiumHeight / 3, podiumDepth / 2 + 15);
+    scene.add(podium);
 }
 
 function createParallelepiped(width, height, depth, x, y, z){
     'use strict';
+    
+    const texture = new THREE.TextureLoader().load('https://static.wikia.nocookie.net/planet-texture-maps/images/a/aa/Earth_Texture_Full.png/revision/latest?cb=20190401163425');
 
-    material = new THREE.MeshBasicMaterial({ color: 0x00FFFF, wireframe: true });
+    material = new THREE.MeshLambertMaterial({map: texture});
     geometry = new THREE.BoxGeometry(width, height, depth);
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.set(x, y, z);
-
-    scene.add(mesh);
+    podium.add(mesh);
 }
 
 function createFirstStageFace(vertices, material){
+    'use strict';
 
-    //const texture = new THREE.TextureLoader().load('https://www.3dwallpaperarts.com/wp-content/uploads/2021/05/ahegao-wallpaper-0043-1536x864.jpg');
-    //material = new THREE.MeshBasicMaterial({map: texture});
     geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     geometry.computeVertexNormals();
+
     mesh = new THREE.Mesh(geometry, material);
+
     firstStage.add(mesh);
 }
 
@@ -93,10 +97,11 @@ function createFirstStage(){
                                  sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
 
-    material = new THREE.MeshBasicMaterial({color: "blue"});
+    material = new THREE.MeshLambertMaterial({color: "red"});
     createFirstStageFace(vertices, material);
 
-    createSpotlight(firstSpotlight, - podiumWidth / 3, 20, 0);
+    
+    createSpotlight(firstSpotlight, firstStage, 0, 50, -20); // 
     firstStage.position.set(- podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
     scene.add(firstStage);
 }
@@ -111,33 +116,34 @@ function createThirdStage(){
     // scene.add(thirdStage, coordinates);
 }
 
-function createSpotlight(spotlight, x, y, z){
-    spotlight = new THREE.SpotLight("white");
+function createSpotlight(spotlight, object, x, y, z){
+    'use strict';
+    spotlight = new THREE.SpotLight(new THREE.Color("white"), 5, 2*y, Math.PI / 6, 0.25, 0);
     spotlight.position.set(x, y, z);
-
     spotlight.castShadow = true;
 
-    spotlight.shadow.mapSize.width = 1024;
-    spotlight.shadow.mapSize.height = 1024;
+    object.add(spotlight);
 
-    spotlight.shadow.camera.near = 500;
-    spotlight.shadow.camera.far = 4000;
-    spotlight.shadow.camera.fov = 30;
-
-    const spotter = new THREE.SpotLightHelper(spotlight, 10);
+    const spotter = new THREE.SpotLightHelper(spotlight);
     scene.add(spotter);
-    scene.add(spotlight);
 }
 
 function createGlobalLight(){
-    
-    globalLight = new THREE.DirectionalLight("white", 1);
-    globalLight.position.set(50, 0, 0);
-    // globalLight.rotation.set(0, 0, - Math.PI / 4);
-    globalLight.target = firstStage;
+    'use strict';
+    globalLight = new THREE.DirectionalLight("red", 10);
+    globalLight.position.set(0, 100, 0);
     const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
     scene.add(spotter);
     scene.add(globalLight);
+}
+
+function createMaterials(){
+    'use strict';
+    const texture = new THREE.TextureLoader().load('https://static.wikia.nocookie.net/planet-texture-maps/images/a/aa/Earth_Texture_Full.png/revision/latest?cb=20190401163425');
+    lambertSimpleMaterial = new THREE.MeshLambertMaterial({color: 0xee0000});
+    lambertTexturedMaterial = new THREE.MeshLambertMaterial({map: texture});
+    phongSimpleMaterial = new THREE.MeshPhongMaterial({color: 0xee0000});
+    phongTexturedMaterial = new THREE.MeshPhongMaterial({map: texture});
 }
 
 function createPerspectiveCamera() {
