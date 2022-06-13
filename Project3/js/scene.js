@@ -22,9 +22,9 @@ var perpsectiveCamera, orthographicCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
 
-var spotlightHelper;
+var firstSpotlightHelper, secondSpotlightHelper, thirdSpotlightHelper;
 
-const sheetDiagonal = 25;
+const sheetDiagonal = 21*Math.SQRT2;
 
 const podiumWidth = 150, podiumHeight = 30, podiumDepth = 100;
 
@@ -40,7 +40,6 @@ function createScene() {
     createSecondStage();
     createThirdStage();
     createGlobalLight();
-	createLamp(- podiumWidth / 3, podiumHeight, 30);
 }
 
 function createPodium(){
@@ -64,7 +63,7 @@ function createParallelepiped(width, height, depth, x, y, z){
     podium.add(mesh);
 }
 
-function createFirstStageFace(vertices, material){
+function createPolygon(object, vertices, material){
     'use strict';
 
     geometry = new THREE.BufferGeometry();
@@ -73,7 +72,7 @@ function createFirstStageFace(vertices, material){
 
     mesh = new THREE.Mesh(geometry, material);
 
-    firstStage.add(mesh);
+    object.add(mesh);
 }
 
 function createLamp(x, y, z){
@@ -111,7 +110,7 @@ function createFirstStage(){
                                  0, - sheetDiagonal / 2, -1]);
     
     material = new THREE.MeshLambertMaterial({color: "red"});
-    createFirstStageFace(vertices, material);
+    createPolygon(firstStage, vertices, material);
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
                                  - sheetDiagonal / 2, 0, 1,
@@ -121,17 +120,73 @@ function createFirstStage(){
                                  sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
 
-    material = new THREE.MeshLambertMaterial({color: "red"});
-    createFirstStageFace(vertices, material);
+    material = new THREE.MeshLambertMaterial({color: "blue"});
+    createPolygon(firstStage, vertices, material);
 
     firstStage.position.set(- podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
-    firstSpotlight = createSpotlight(firstSpotlight, firstStage, - podiumWidth / 3, podiumHeight, 30);
+    [firstSpotlight, firstSpotlightHelper] = createSpotlight(firstSpotlight, firstStage, firstSpotlightHelper, - podiumWidth / 3, podiumHeight, 30);
+	createLamp(- podiumWidth / 3, podiumHeight, 30);
     scene.add(firstStage);
 }
 
 function createSecondStage(){
-    // createSpotlight(secondSpotlight, ??, ??, ??)
-    // scene.add(secondStage, coordinates);
+    'use strict';
+
+    secondStage = new THREE.Object3D();
+
+    /**/
+
+    vertices = new Float32Array([0, - sheetDiagonal / 2, 0,
+                                 3.6, sheetDiagonal / 2 - 9, - 2.5,
+                                 0.2, sheetDiagonal / 2 - 7.1, 1,
+ 
+                                 0, - sheetDiagonal / 2, 0,
+                                 - 0.2, sheetDiagonal / 2 - 7.1, 1,
+                                 - 3.6, sheetDiagonal / 2 - 9, - 2.5,
+                             
+                                 0, - sheetDiagonal / 2, 0,
+                                 4, sheetDiagonal / 2 - 5, - 2.7,
+                                 0, sheetDiagonal / 2, 0,
+ 
+                                 0, - sheetDiagonal / 2, 0,
+                                 0, sheetDiagonal / 2, 0,
+                                 - 4, sheetDiagonal / 2 - 5, - 2.7,
+                                
+                                 0.2, sheetDiagonal / 2 - 9, - 0.2,
+                                 3.6, sheetDiagonal / 2 - 9, - 2.5,
+                                 0, - sheetDiagonal / 2, 0,
+
+                                 - 3.6, sheetDiagonal / 2 - 9, - 2.5,
+                                 - 0.2, sheetDiagonal / 2 - 9, - 0.2,
+                                 0, - sheetDiagonal / 2, 0]);
+    
+    material = new THREE.MeshLambertMaterial({color: "red"});
+    createPolygon(secondStage, vertices, material);
+
+    /**/
+    vertices = new Float32Array([3.6, sheetDiagonal / 2 - 9, - 2.5,
+                                 4, sheetDiagonal / 2 - 5, - 2.5,
+                                 0.2, sheetDiagonal / 2 - 7.1, 1,
+                             
+                                 - 3.6, sheetDiagonal / 2 - 9, - 2.5,
+                                 - 0.2, sheetDiagonal / 2 - 7.1, 1,
+                                 - 4, sheetDiagonal / 2 - 5, - 2.7,
+                                 
+                                 0, sheetDiagonal / 2, 0,
+                                 4, sheetDiagonal / 2 - 5, - 2.7,
+                                 0, - sheetDiagonal / 2, 0,
+                                
+                                 - 4, sheetDiagonal / 2 - 5, - 2.7,
+                                 0, sheetDiagonal / 2, 0,
+                                 0, - sheetDiagonal / 2, 0,]);
+
+    material = new THREE.MeshLambertMaterial({color: "blue"});
+    createPolygon(secondStage, vertices, material);
+
+    secondStage.position.set(0, (podiumHeight + sheetDiagonal) / 2, 0);
+    [secondSpotlight, secondSpotlightHelper] = createSpotlight(secondSpotlight, secondStage, secondSpotlightHelper, 0, podiumHeight, 30);
+	createLamp(0, podiumHeight, 30);
+    scene.add(secondStage);
 }
 
 function createThirdStage(){
@@ -139,9 +194,9 @@ function createThirdStage(){
     // scene.add(thirdStage, coordinates);
 }
 
-function createSpotlight(spotlight, object, x, y, z){
+function createSpotlight(spotlight, object, spotlightHelper, x, y, z){
     'use strict';
-    spotlight = new THREE.SpotLight(new THREE.Color("white"), 10, 2*y, Math.PI / 6, 0.25, 0);
+    spotlight = new THREE.SpotLight(new THREE.Color("white"), 1, 2*y, Math.PI / 6, 0.25, 0);
     spotlight.position.set(x, y, z);
     spotlight.castShadow = true;
 
@@ -153,12 +208,12 @@ function createSpotlight(spotlight, object, x, y, z){
     spotlightHelper = new THREE.SpotLightHelper(spotlight);
     scene.add(spotlightHelper);
 
-    return spotlight;
+    return [spotlight, spotlightHelper];
 }
 
 function createGlobalLight(){
     'use strict';
-    globalLight = new THREE.DirectionalLight("white", 5);
+    globalLight = new THREE.DirectionalLight("white", 1);
     globalLight.position.set(50, 100, 35);
     const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
     scene.add(spotter);
@@ -181,7 +236,7 @@ function createPerspectiveCamera() {
                                                     1,
                                                     1000);
                                                     
-    perpsectiveCamera.position.set(0, 20, 200);
+    perpsectiveCamera.position.set(0, 40, 120);
     perpsectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
@@ -360,13 +415,13 @@ function chooseCameraMode(){
 }
 
 function checkToggles(){
-    globalLightOn ? globalLight.intensity = 0.7 : globalLight.intensity = 0;
+    globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
 
-    firstSpotlightOn ? firstSpotlight.intensity = 0.7 : firstSpotlight.intensity = 0;
+    firstSpotlightOn ? firstSpotlight.intensity = 1 : firstSpotlight.intensity = 0;
 
-    //secondSpotlightOn ? secondSpotlight.intensity = 0.7 : secondSpotlight.intensity = 0;
+    secondSpotlightOn ? secondSpotlight.intensity = 1 : secondSpotlight.intensity = 0;
 
-    //thirdSpotlightOn ? thirdSpotlight.intensity = 0.7 : thirdSpotlight.intensity = 0;
+    //thirdSpotlightOn ? thirdSpotlight.intensity = 1 : thirdSpotlight.intensity = 0;
 }
 
 function animate() {
@@ -381,12 +436,14 @@ function animate() {
     }
 
     firstStage.rotateY((increaseAngleFirstStage - decreaseAngleFirstStage) * deltaAngle);
+    secondStage.rotateY((increaseAngleSecondStage - decreaseAngleSecondStage) * deltaAngle);
 
     checkToggles();
 
     render();
 
-    spotlightHelper.update();
+    firstSpotlightHelper.update();
+    secondSpotlightHelper.update();
 
     requestAnimationFrame(animate);
 
