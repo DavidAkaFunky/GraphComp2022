@@ -40,6 +40,7 @@ function createScene() {
     createSecondStage();
     createThirdStage();
     createGlobalLight();
+	createLamp(- podiumWidth / 3, podiumHeight, 30);
 }
 
 function createPodium(){
@@ -73,6 +74,27 @@ function createFirstStageFace(vertices, material){
     mesh = new THREE.Mesh(geometry, material);
 
     firstStage.add(mesh);
+}
+
+function createLamp(x, y, z){
+    'use strict';
+    
+	//Lamps are being created locally, perhaps they should be global?
+    material = new THREE.MeshBasicMaterial({color: 'cyan'})
+    geometry = new THREE.CylinderGeometry(4, 4, 12, 16); //radius, radius, height
+    mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(x, y - 10, z);
+    
+    scene.add(mesh);
+
+    material = new THREE.MeshBasicMaterial({color: 'cyan'});
+    geometry = new THREE.SphereGeometry(4, 64, 64);
+    mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(x, y, z);
+    
+    scene.add(mesh);
 }
 
 function createFirstStage(){
