@@ -6,23 +6,23 @@ var material, geometry, mesh, vertices;
 
 var clock;
 
-var firstStage, secondStage, thirdStage, podium;
+var origamiStages = [], podium;
 
-var increaseAngleFirstStage, decreaseAngleFirstStage, increaseAngleSecondStage, decreaseAngleSecondStage, increaseAngleThirdStage, decreaseAngleThirdStage;
+var globalLight, globalLightOn;
 
-var firstSpotlight, secondSpotlight, thirdSpotlight, globalLight;
+var basicSimpleMaterial, basicTexturedMaterial;
 
-var firstSpotlightOn, secondSpotlightOn, thirdSpotlightOn, globalLightOn;
+var lambertSimpleMaterial, lambertTexturedMaterial;
 
-var lambertSimpleMaterial, lambertTexturedMaterial, phongSimpleMaterial, phongTexturedMaterial;
+var phongSimpleMaterial, phongTexturedMaterial;
 
-var shadingMode, illuminationCalculation;
+var shadingMode,toggleShadingMode;
+
+var illuminationCalculation, toggleIlluminationCalculation;
 
 var perpsectiveCamera, orthographicCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
-
-var firstSpotlightHelper, secondSpotlightHelper, thirdSpotlightHelper;
 
 var timeStopped;
 
@@ -31,17 +31,18 @@ const sheetDiagonal = 21*Math.SQRT2;
 const podiumWidth = 150, podiumHeight = 30, podiumDepth = 100;
 
 class OrigamiStage{
-    constructor(spotlight, spotlightOn, spotlightHelper, frontMesh, backMesh){
+    constructor (spotlight, spotlightHelper, frontMesh, backMesh){
         this.origami = new THREE.Object3D();
-        this.origami.add(frontMesh);
-        this.origami.add(backMesh);
-        this.spotlight;
-        this.spotlightOn;
-        this.spotlightHelper;
-        this.frontMesh;
-        this.frontRegularMesh = this.frontMesh;
-        this.backMesh;
-        this.backRegularMesh = this.backMesh;
+        this.spotlight = spotlight;
+        this.spotlight.target = this.origami;
+        this.spotlightOn = true;
+        this.spotlightHelper = spotlightHelper;
+        this.frontMesh = frontMesh;
+        this.frontLastMesh = new THREE.Mesh(frontMesh.geometry, basicTexturedMaterial);
+        this.backMesh = backMesh;
+        this.backLastMesh = new THREE.Mesh(backMesh.geometry, basicSimpleMaterial);
+        this.increaseAngle = false;
+        this.decreaseAngle = false;
     }
 }
 
@@ -49,8 +50,6 @@ function createScene() {
     'use strict';
 
     scene = new THREE.Scene();
-
-    scene.add(new THREE.AxesHelper(50));
 
     createPodium();
     createFirstStage();
@@ -81,29 +80,16 @@ function createParallelepiped(width, height, depth, x, y, z){
     podium.add(mesh);
 }
 
-function createPolygon(object, vertices, material){
-    'use strict';
-
-    geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    geometry.computeVertexNormals();
-
-    mesh = new THREE.Mesh(geometry, material);
-
-    object.add(mesh);
-}
-
 function createLamp(x, y, z){
     'use strict';
     
-	//Lamps are being created locally, perhaps they should be global?
     material = new THREE.MeshBasicMaterial({color: 'cyan'})
     geometry = new THREE.ConeGeometry(5, 10, 14); //radius, height
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.set(x, y, z);
 
-    mesh.rotateX( Math.PI/10)
+    mesh.rotateX(Math.PI/10);
     
     scene.add(mesh);
 
@@ -116,10 +102,34 @@ function createLamp(x, y, z){
     scene.add(mesh);
 }
 
-function createFirstStage(){
+function createPolygon(vertices, material){
     'use strict';
 
-    firstStage = new THREE.Object3D();
+    geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+
+    mesh = new THREE.Mesh(geometry, material);
+
+    return mesh;
+}
+
+function createOrigamiStage(frontMesh, backMesh, x, y, z){
+    'use strict';
+    let spotlight = createSpotlight(x, 2*y, 10);
+    let spotlightHelper = new THREE.SpotLightHelper(spotlight);
+    let origamiStage = new OrigamiStage(spotlight, spotlightHelper, frontMesh, backMesh);
+    origamiStage.origami.add(frontMesh);
+    origamiStage.origami.add(backMesh);
+    origamiStage.origami.position.set(x, y, z);
+    origamiStages.push(origamiStage);
+    scene.add(spotlightHelper);
+    scene.add(origamiStage.origami);
+	createLamp(x, 2*y, 10);
+}
+
+function createFirstStage(){
+    'use strict';
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
                                  sheetDiagonal / 2, 0, 1,
@@ -129,8 +139,7 @@ function createFirstStage(){
                                  - sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
     
-    material = new THREE.MeshLambertMaterial({color: "red"});
-    createPolygon(firstStage, vertices, material);
+    let frontMesh = createPolygon(vertices, lambertTexturedMaterial);
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
                                  - sheetDiagonal / 2, 0, 1,
@@ -140,21 +149,13 @@ function createFirstStage(){
                                  sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
 
-    material = new THREE.MeshLambertMaterial({color: "blue"});
-    createPolygon(firstStage, vertices, material);
+    let backMesh = createPolygon(vertices, lambertSimpleMaterial);
 
-    firstStage.position.set(- podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
-    [firstSpotlight, firstSpotlightHelper] = createSpotlight(firstSpotlight, firstStage, firstSpotlightHelper, - podiumWidth / 3, podiumHeight + sheetDiagonal, 10);
-	createLamp(- podiumWidth / 3, podiumHeight + sheetDiagonal, 10);
-    scene.add(firstStage);
+    createOrigamiStage(frontMesh, backMesh, - podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
 }
 
 function createSecondStage(){
     'use strict';
-
-    secondStage = new THREE.Object3D();
-
-    /**/
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, 0,
                                  3.6, sheetDiagonal / 2 - 9, - 2.5,
@@ -180,10 +181,8 @@ function createSecondStage(){
                                  - 0.2, sheetDiagonal / 2 - 9, - 0.2,
                                  0, - sheetDiagonal / 2, 0]);
     
-    material = new THREE.MeshLambertMaterial({color: "red"});
-    createPolygon(secondStage, vertices, material);
+    let frontMesh = createPolygon(vertices, lambertTexturedMaterial);
 
-    /**/
     vertices = new Float32Array([3.6, sheetDiagonal / 2 - 9, - 2.5,
                                  4, sheetDiagonal / 2 - 5, - 2.5,
                                  0.2, sheetDiagonal / 2 - 7.1, 1,
@@ -200,18 +199,12 @@ function createSecondStage(){
                                  0, sheetDiagonal / 2, 0,
                                  0, - sheetDiagonal / 2, 0,]);
 
-    material = new THREE.MeshLambertMaterial({color: "blue"});
-    createPolygon(secondStage, vertices, material);
+    let backMesh = createPolygon(vertices, lambertSimpleMaterial);
 
-    secondStage.position.set(0, (podiumHeight + sheetDiagonal) / 2, 0);
-    [secondSpotlight, secondSpotlightHelper] = createSpotlight(secondSpotlight, secondStage, secondSpotlightHelper, 0, podiumHeight + sheetDiagonal, 10);
-	createLamp(0, podiumHeight + sheetDiagonal, 10);
-    scene.add(secondStage);
+    createOrigamiStage(frontMesh, backMesh, 0, (podiumHeight + sheetDiagonal) / 2, 0);
 }
 
 function createThirdStage(){
-
-    thirdStage = new THREE.Object3D();
 
     vertices = new Float32Array([
 									// Face A1
@@ -236,8 +229,7 @@ function createThirdStage(){
 
 	                           ]);
     
-    material = new THREE.MeshLambertMaterial({color: "red"});
-    createPolygon(thirdStage, vertices, material);
+    let frontMesh = createPolygon(vertices, lambertTexturedMaterial);
 
     vertices = new Float32Array([
 
@@ -263,49 +255,49 @@ function createThirdStage(){
 
 								]);
 
-    material = new THREE.MeshLambertMaterial({color: "blue"});
-    createPolygon(thirdStage, vertices, material);
+    let backMesh = createPolygon(vertices, lambertSimpleMaterial);
 
-    thirdStage.position.set(podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
-    [thirdSpotlight, thirdSpotlightHelper] = createSpotlight(thirdSpotlight, thirdStage, thirdSpotlightHelper, podiumWidth / 3, podiumHeight + sheetDiagonal, 10);
-	createLamp(podiumWidth / 3, podiumHeight + sheetDiagonal, 10);
-    scene.add(thirdStage);
+    createOrigamiStage(frontMesh, backMesh, podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
 }
 
-function createSpotlight(spotlight, object, spotlightHelper, x, y, z){
+function createSpotlight(x, y, z){
     'use strict';
-    spotlight = new THREE.SpotLight(new THREE.Color("white"), 20, 0, Math.PI / 6, 1, 0);
+
+    let spotlight = new THREE.SpotLight(new THREE.Color("white"), 20, 0, Math.PI / 6, 1, 0);
     spotlight.position.set(x, y, z);
     spotlight.castShadow = true;
-
-    spotlight.target = object; //why the fuck is this not working
- 
+    
     scene.add(spotlight);
     scene.add(spotlight.target);
 
-    spotlightHelper = new THREE.SpotLightHelper(spotlight);
-    scene.add(spotlightHelper);
-
-    return [spotlight, spotlightHelper];
+    return spotlight;
 }
 
 function createGlobalLight(){
     'use strict';
+
     globalLight = new THREE.DirectionalLight("white", 1);
+
     globalLight.position.set(50, 100, 35);
     globalLight.castShadow = true;
+
     const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
+
     scene.add(spotter);
     scene.add(globalLight);
 }
 
 function createMaterials(){
     'use strict';
+    // Texture must be used eventually
     const texture = new THREE.TextureLoader().load('https://static.wikia.nocookie.net/planet-texture-maps/images/a/aa/Earth_Texture_Full.png/revision/latest?cb=20190401163425');
-    lambertSimpleMaterial = new THREE.MeshLambertMaterial({color: 0xee0000});
-    lambertTexturedMaterial = new THREE.MeshLambertMaterial({map: texture});
-    phongSimpleMaterial = new THREE.MeshPhongMaterial({color: 0xee0000});
-    phongTexturedMaterial = new THREE.MeshPhongMaterial({map: texture});
+    basicSimpleMaterial = new THREE.MeshBasicMaterial({color: "blue"});
+    basicTexturedMaterial = new THREE.MeshBasicMaterial({color: "red"});
+    lambertSimpleMaterial = new THREE.MeshLambertMaterial({color: "blue"});
+    lambertTexturedMaterial = new THREE.MeshLambertMaterial({color: "red"});
+    phongSimpleMaterial = new THREE.MeshPhongMaterial({color: "blue"});
+    phongTexturedMaterial = new THREE.MeshPhongMaterial({color: "red"});
+    
 }
 
 function createPerspectiveCamera() {
@@ -372,43 +364,47 @@ function onKeyDown(e) {
 
     // Rotate origami figures
     if (e.keyCode == 81 || e.keyCode == 113)  // Q, q
-        increaseAngleFirstStage = true;
+        origamiStages[0].increaseAngle = true;
 
     if (e.keyCode == 87 || e.keyCode == 119)  // W, w
-        decreaseAngleFirstStage = true;
+        origamiStages[0].decreaseAngle = true;
 
     if (e.keyCode == 69 || e.keyCode == 101)  // E, e
-        increaseAngleSecondStage = true;
+        origamiStages[1].increaseAngle = true;
 
     if (e.keyCode == 82 || e.keyCode == 114)  // R, r
-        decreaseAngleSecondStage = true;
+        origamiStages[1].decreaseAngle = true;
 
     if (e.keyCode == 84 || e.keyCode == 116)  // T, t
-        increaseAngleThirdStage = true;
+        origamiStages[2].increaseAngle = true;
 
     if (e.keyCode == 89 || e.keyCode == 121)  // Y, y
-        decreaseAngleThirdStage = true;
+        origamiStages[2].increaseAngle = true;
 
         
-    // Shading mode
-    if (e.keyCode == 65 || e.keyCode == 97)   // A, a
+    // Shading mode (Lambert or Phong)
+    if (e.keyCode == 65 || e.keyCode == 97){ // A, a
+        toggleShadingMode = true;
         shadingMode = !shadingMode;
-
+    }
+        
 
     // Illumination calculation
-    if (e.keyCode == 83 || e.keyCode == 115)  // S, s
+    if (e.keyCode == 83 || e.keyCode == 115){ // S, s
+        toggleIlluminationCalculation = true;
         illuminationCalculation = !illuminationCalculation;
+    }  
     
 
     // Turn spotlights on/off
     if (e.keyCode == 90 || e.keyCode == 122)  // Z, z
-        firstSpotlightOn = !firstSpotlightOn;
+        origamiStages[0].spotlightOn = !origamiStages[0].spotlightOn;
 
     if (e.keyCode == 88 || e.keyCode == 120)  // X, x
-        secondSpotlightOn = !secondSpotlightOn;
+        origamiStages[1].spotlightOn = !origamiStages[1].spotlightOn;
 
     if (e.keyCode == 67 || e.keyCode == 99)   // C, c
-        thirdSpotlightOn = !thirdSpotlightOn;
+        origamiStages[2].spotlightOn = !origamiStages[2].spotlightOn;
 
 
     // Turn global directional light on/off
@@ -424,40 +420,33 @@ function onKeyUp(e) {
 
     // Rotate origami figures
     if (e.keyCode == 81 || e.keyCode == 113)  // Q, q
-        increaseAngleFirstStage = false;
+        origamiStages[0].increaseAngle = false;
 
     if (e.keyCode == 87 || e.keyCode == 119)  // W, w
-        decreaseAngleFirstStage = false;
+        origamiStages[0].decreaseAngle = false;
 
     if (e.keyCode == 69 || e.keyCode == 101)  // E, e
-        increaseAngleSecondStage = false;
+        origamiStages[1].increaseAngle = false;
 
     if (e.keyCode == 82 || e.keyCode == 114)  // R, r
-        decreaseAngleSecondStage = false;
+        origamiStages[1].decreaseAngle = false;
 
     if (e.keyCode == 84 || e.keyCode == 116)  // T, t
-        increaseAngleThirdStage = false;
+        origamiStages[2].increaseAngle = false;
 
     if (e.keyCode == 89 || e.keyCode == 121)  // Y, y
-        decreaseAngleThirdStage = false;
+        origamiStages[2].increaseAngle = false;
 }
 
 function resetUpdateFlags(){
     'use strict';
-    increaseAngleFirstStage = false;
-    decreaseAngleFirstStage = false;
-    increaseAngleSecondStage = false;
-    decreaseAngleSecondStage = false;
-    increaseAngleThirdStage = false;
-    decreaseAngleThirdStage = false;
+    toggleShadingMode = false;
+    toggleIlluminationCalculation = false;
     timeStopped = false;
     changedCamera = true;
     usingPerspectiveCamera = true;
     shadingMode = true;
     illuminationCalculation = true;
-    firstSpotlightOn = true;
-    secondSpotlightOn = true;
-    thirdSpotlightOn = true;
     globalLightOn = true;
 }
 
@@ -472,9 +461,11 @@ function init() {
     renderer = new THREE.WebGLRenderer({
         antialias: true
     });
+
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    createMaterials();
     createScene();
     resetUpdateFlags();
     createPerspectiveCamera();
@@ -496,29 +487,21 @@ function chooseCameraMode(){
         camera = orthographicCamera;
 }
 
-function checkToggles(clockDelta){
-    globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
+function swap(mesh1, mesh2){
+    'use strict';
 
-    firstSpotlightOn ? firstSpotlight.intensity = 1 : firstSpotlight.intensity = 0;
-
-    secondSpotlightOn ? secondSpotlight.intensity = 1 : secondSpotlight.intensity = 0;
-
-    thirdSpotlightOn ? thirdSpotlight.intensity = 1 : thirdSpotlight.intensity = 0;
-
-    if (!illuminationCalculation)
-        //firstStage.material = new THREE.MeshBasicMaterial
-        
-    if (timeStopped && clockDelta != 0)
-        clock.stop();
-    if (!timeStopped && clockDelta == 0)
-        clock.start();      
+    const tempMesh = mesh1;
+    mesh1 = mesh2;
+    mesh2 = tempMesh;
+    return [mesh1, mesh2];
 }
 
 function animate() {
     'use strict';
 
+    const deltaClock = clock.getDelta();
+
     if (!timeStopped){
-        const deltaClock = clock.getDelta();
         const deltaAngle = Math.PI * deltaClock / 2; 
 
         if (changedCamera){
@@ -526,17 +509,46 @@ function animate() {
             changedCamera = false;
         }
 
-        firstStage.rotateY((increaseAngleFirstStage - decreaseAngleFirstStage) * deltaAngle);
-        secondStage.rotateY((increaseAngleSecondStage - decreaseAngleSecondStage) * deltaAngle);
-        thirdStage.rotateY((increaseAngleThirdStage - decreaseAngleThirdStage) * deltaAngle);
+        for (let i = 0; i < origamiStages.length; i++) {
+            let origamiStage = origamiStages[i];
+            origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
+            origamiStage.origami.rotateY((origamiStage.increaseAngle - origamiStage.decreaseAngle) * deltaAngle);
+            origamiStage.spotlightHelper.update();
+
+            if (toggleIlluminationCalculation){
+                [origamiStage.frontMesh, origamiStage.frontLastMesh] = swap(origamiStage.frontMesh, origamiStage.frontLastMesh);
+                [origamiStage.backMesh, origamiStage.backLastMesh] = swap(origamiStage.backMesh, origamiStage.backLastMesh);
+                origamiStage.origami.clear();
+                origamiStage.origami.add(origamiStage.frontMesh);
+                origamiStage.origami.add(origamiStage.backMesh);
+            }
+            if (toggleShadingMode && illuminationCalculation){
+                if (shadingMode){
+                    origamiStage.frontMesh.material = lambertTexturedMaterial;
+                    origamiStage.backMesh.material = lambertSimpleMaterial;
+                } else {
+                    origamiStage.frontMesh.material = phongTexturedMaterial;
+                    origamiStage.backMesh.material = phongSimpleMaterial;
+                }
+            }
+        }
+        
+        if (toggleIlluminationCalculation)
+            toggleIlluminationCalculation = false;
+        
+        if (toggleShadingMode)
+            toggleShadingMode = false;
+
+        globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
+
+        //firstStage.material = new THREE.MeshBasicMaterial
+        
+        if (timeStopped && deltaClock != 0)
+            clock.stop();
+        if (!timeStopped && deltaClock == 0)
+            clock.start();  
 
         render();
-
-        checkToggles();
-
-        firstSpotlightHelper.update();
-        secondSpotlightHelper.update();
-        thirdSpotlightHelper.update();
 
     }
     
