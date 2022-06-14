@@ -30,6 +30,21 @@ const sheetDiagonal = 21*Math.SQRT2;
 
 const podiumWidth = 150, podiumHeight = 30, podiumDepth = 100;
 
+class OrigamiStage{
+    constructor(spotlight, spotlightOn, spotlightHelper, frontMesh, backMesh){
+        this.origami = new THREE.Object3D();
+        this.origami.add(frontMesh);
+        this.origami.add(backMesh);
+        this.spotlight;
+        this.spotlightOn;
+        this.spotlightHelper;
+        this.frontMesh;
+        this.frontRegularMesh = this.frontMesh;
+        this.backMesh;
+        this.backRegularMesh = this.backMesh;
+    }
+}
+
 function createScene() {
     'use strict';
 
