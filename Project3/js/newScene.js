@@ -435,7 +435,7 @@ function onKeyUp(e) {
         origamiStages[2].increaseAngle = false;
 
     if (e.keyCode == 89 || e.keyCode == 121)  // Y, y
-        origamiStages[2].increaseAngle = false;
+        origamiStages[2].decreaseAngle = false;
 }
 
 function resetUpdateFlags(){
