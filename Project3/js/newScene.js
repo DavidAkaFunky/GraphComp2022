@@ -2,11 +2,11 @@
 
 var camera, scene, renderer;
 
-var material, geometry, mesh, vertices;
+var material, geometry, mesh, vertices, uvVertices;
 
 var clock;
 
-var origamiStages = [], podium;
+var podium;
 
 var globalLight, globalLightOn;
 
@@ -27,6 +27,8 @@ var perpsectiveCamera, orthographicCamera, VRPerspectiveCamera;
 var usingPerspectiveCamera, usingOrthographicCamera, usingVRPerspectiveCamera, changedCamera;
 
 var timeStopped;
+
+const origamiStages = [];
 
 const sheetDiagonal = 21*Math.SQRT2;
 
@@ -63,7 +65,7 @@ function createScene() {
 function createPodium(){
     podium = new THREE.Object3D();
     createParallelepiped(podiumWidth, podiumHeight, podiumDepth, 0, 0, 0);
-    createParallelepiped(podiumWidth, 2 * podiumHeight / 3, 10, 0, - podiumHeight / 6, podiumDepth / 2 + 5);
+    createParallelepiped(podiumWidth, podiumHeight / 3, 10, 0, 0, podiumDepth / 2 + 5);
     createParallelepiped(podiumWidth, podiumHeight / 3, 10, 0, - podiumHeight / 3, podiumDepth / 2 + 15);
     podiumCurrentMaterial = lambertPodiumMaterial;
     podiumLastMaterial = basicPodiumMaterial;
@@ -84,15 +86,15 @@ function createLamp(x, y, z, rotX){
 
     const lamp = new THREE.Object3D();
     
-    material = new THREE.MeshBasicMaterial({color: '#6988a3'});
+    material = new THREE.MeshPhongMaterial({color: '#6988a3'});
     material.needsUpdate = true;
-    geometry = new THREE.ConeGeometry(5, 10, 14); //radius, height
+    geometry = new THREE.ConeGeometry(5, 10, 32);
     mesh = new THREE.Mesh(geometry, material);
 
     lamp.add(mesh);
 
     material = new THREE.MeshBasicMaterial({color: '#efdfbb'});
-    geometry = new THREE.SphereGeometry(2, 64, 64);
+    geometry = new THREE.SphereGeometry(2, 8, 8);
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.set(0, - 5, 0);
@@ -104,11 +106,13 @@ function createLamp(x, y, z, rotX){
     scene.add(lamp);
 }
 
-function createPolygon(vertices, material){
+function createPolygon(isTextured, material){
     'use strict';
 
     geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    if (isTextured)
+        geometry.setAttribute('uv', new THREE.BufferAttribute(uvVertices, 2));
     geometry.computeVertexNormals();
 
     mesh = new THREE.Mesh(geometry, material);
@@ -118,9 +122,9 @@ function createPolygon(vertices, material){
 
 function createOrigamiStage(frontMesh, backMesh, x, y, z){
     'use strict';
-    let spotlight = createSpotlight(x, 2*y, 10);
-    let spotlightHelper = new THREE.SpotLightHelper(spotlight);
-    let origamiStage = new OrigamiStage(spotlight, spotlightHelper, frontMesh, backMesh);
+    const spotlight = createSpotlight(x, 2*y, 10);
+    const spotlightHelper = new THREE.SpotLightHelper(spotlight);
+    const origamiStage = new OrigamiStage(spotlight, spotlightHelper, frontMesh, backMesh);
     origamiStage.origami.add(frontMesh);
     origamiStage.origami.add(backMesh);
     origamiStage.origami.position.set(x, y, z);
@@ -140,8 +144,16 @@ function createFirstStage(){
                                  0, sheetDiagonal / 2, -1,
                                  - sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
+
+    uvVertices = new Float32Array([0, 0,
+                                   0, 1,
+                                   1, 0,
+                                    
+                                   1, 0,
+                                   1, 1,
+                                   0, 0]);
     
-    let frontMesh = createPolygon(vertices, lambertTexturedMaterial);
+    const frontMesh = createPolygon(true, lambertTexturedMaterial);
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
                                  - sheetDiagonal / 2, 0, 1,
@@ -151,7 +163,7 @@ function createFirstStage(){
                                  sheetDiagonal / 2, 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
 
-    let backMesh = createPolygon(vertices, lambertSimpleMaterial);
+    const backMesh = createPolygon(false, lambertSimpleMaterial);
 
     createOrigamiStage(frontMesh, backMesh, - podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
 }
@@ -183,7 +195,31 @@ function createSecondStage(){
                                  - 0.2, sheetDiagonal / 2 - 9, - 0.2,
                                  0, - sheetDiagonal / 2, 0]);
     
-    let frontMesh = createPolygon(vertices, lambertTexturedMaterial);
+    uvVertices = new Float32Array([   1,    0,
+                                    0.4, 0.85,
+                                    0.2,  0.8,   
+
+                                      1,    0,
+                                    0.2,  0.8,
+                                   0.15,  0.6,
+                                    
+                                      1,    0,
+                                   0.25,    1,
+                                      0,    1,   
+ 
+                                      1,    0,
+                                      0,    1,
+                                      0, 0.75,   
+ 
+                                    0.2,  0.8,
+                                    0.4, 0.85,
+                                      1,    0,   
+ 
+                                    0.15, 0.6,
+                                     0.2, 0.8,
+                                       1,   0]);
+
+    const frontMesh = createPolygon(true, lambertTexturedMaterial);
 
     vertices = new Float32Array([3.6, sheetDiagonal / 2 - 9, - 2.5,
                                  4, sheetDiagonal / 2 - 5, - 2.5,
@@ -201,7 +237,7 @@ function createSecondStage(){
                                  0, sheetDiagonal / 2, 0,
                                  0, - sheetDiagonal / 2, 0,]);
 
-    let backMesh = createPolygon(vertices, lambertSimpleMaterial);
+    const backMesh = createPolygon(false, lambertSimpleMaterial);
 
     createOrigamiStage(frontMesh, backMesh, 0, (podiumHeight + sheetDiagonal) / 2, 0);
 }
@@ -352,7 +388,7 @@ function createThirdStage(){
                                   // R and Q omited as they seem to be hidden 
                                   ]);
     
-    let frontMesh = createPolygon(vertices, lambertTexturedMaterial);
+    const frontMesh = createPolygon(true, lambertTexturedMaterial);
 
     vertices = new Float32Array([
 									// Face alfa 1
@@ -387,7 +423,7 @@ function createThirdStage(){
 
 					                ]);
 
-    let backMesh = createPolygon(vertices, lambertSimpleMaterial);
+    const backMesh = createPolygon(false, lambertSimpleMaterial);
 
     createOrigamiStage(frontMesh, backMesh, podiumWidth / 3, (podiumHeight + sheetDiagonal) / 2, 0);
 }
@@ -395,7 +431,7 @@ function createThirdStage(){
 function createSpotlight(x, y, z){
     'use strict';
 
-    let spotlight = new THREE.SpotLight("white", 20, 60, Math.PI / 6, 1, 0);
+    const spotlight = new THREE.SpotLight("white", 20, 60, Math.PI / 6, 0.5, 0);
     spotlight.position.set(x, y, z);
     spotlight.castShadow = true;
     
@@ -408,7 +444,7 @@ function createSpotlight(x, y, z){
 function createGlobalLight(){
     'use strict';
 
-    globalLight = new THREE.DirectionalLight("white", 1);
+    globalLight = new THREE.DirectionalLight("white", 0.5);
 
     globalLight.position.set(40, 80, 40);
     globalLight.castShadow = true;
@@ -420,33 +456,35 @@ function createGlobalLight(){
 
 function createMaterials(){
     'use strict';
-    // Texture must be used eventually
-    const texture = new THREE.TextureLoader().load('https://static.wikia.nocookie.net/planet-texture-maps/images/a/aa/Earth_Texture_Full.png/revision/latest?cb=20190401163425');
-    basicSimpleMaterial = new THREE.MeshBasicMaterial({color: "blue"});
+
+    const origamiTexture = new THREE.TextureLoader().load('textures/origami-texture.jpg');
+    const podiumTexture = new THREE.TextureLoader().load('textures/wood2.jpg');
+    
+    basicSimpleMaterial = new THREE.MeshBasicMaterial({color: "#eeeeee"});
     basicSimpleMaterial.needsUpdate = true;
 
-    basicTexturedMaterial = new THREE.MeshBasicMaterial({color: "red"});
-    basicTexturedMaterial.needsUpdate = true;
-
-    basicPodiumMaterial = new THREE.MeshBasicMaterial({color: "yellow"});
-    basicPodiumMaterial.needsUpdate = true;   
-
-    lambertSimpleMaterial = new THREE.MeshLambertMaterial({color: "blue"});
+    lambertSimpleMaterial = new THREE.MeshLambertMaterial({color: "#eeeeee"});
     lambertSimpleMaterial.needsUpdate = true;
 
-    lambertTexturedMaterial = new THREE.MeshLambertMaterial({color: "red"});
-    lambertTexturedMaterial.needsUpdate = true;
-
-    lambertPodiumMaterial = new THREE.MeshLambertMaterial({color: "yellow"});
-    lambertPodiumMaterial.needsUpdate = true;
-
-    phongSimpleMaterial = new THREE.MeshPhongMaterial({color: "blue"});
+    phongSimpleMaterial = new THREE.MeshPhongMaterial({color: "#eeeeee"});
     phongSimpleMaterial.needsUpdate = true;
 
-    phongTexturedMaterial = new THREE.MeshPhongMaterial({color: "red"});
-    phongTexturedMaterial.needsUpdate = true;
+    basicTexturedMaterial = new THREE.MeshBasicMaterial({map: origamiTexture});
+    basicTexturedMaterial.needsUpdate = true;
+
+    lambertTexturedMaterial = new THREE.MeshLambertMaterial({map: origamiTexture});
+    lambertTexturedMaterial.needsUpdate = true;
     
-    phongPodiumMaterial = new THREE.MeshPhongMaterial({color: "yellow"});
+    phongTexturedMaterial = new THREE.MeshPhongMaterial({map: origamiTexture});
+    phongTexturedMaterial.needsUpdate = true;
+
+    basicPodiumMaterial = new THREE.MeshBasicMaterial({map: podiumTexture});
+    basicPodiumMaterial.needsUpdate = true;
+
+    lambertPodiumMaterial = new THREE.MeshLambertMaterial({map: podiumTexture});
+    lambertPodiumMaterial.needsUpdate = true;
+
+    phongPodiumMaterial = new THREE.MeshPhongMaterial({map: podiumTexture});
     phongPodiumMaterial.needsUpdate = true;
 }
 
@@ -683,7 +721,7 @@ function animate() {
     }
 
     for (let i = 0; i < origamiStages.length; i++) {
-        let origamiStage = origamiStages[i];
+        const origamiStage = origamiStages[i];
         origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
         origamiStage.spotlightHelper.update();
 
@@ -740,6 +778,8 @@ function animate() {
 
     render();
 
-    renderer.setAnimationLoop(animate);
-    requestAnimationFrame(animate);
+    if (usingVRPerspectiveCamera)
+        renderer.setAnimationLoop(animate);
+    else
+        requestAnimationFrame(animate);
 }
