@@ -379,7 +379,7 @@ function onKeyDown(e) {
         origamiStages[2].increaseAngle = true;
 
     if (e.keyCode == 89 || e.keyCode == 121)  // Y, y
-        origamiStages[2].increaseAngle = true;
+        origamiStages[2].decreaseAngle = true;
 
         
     // Shading mode (Lambert or Phong)
