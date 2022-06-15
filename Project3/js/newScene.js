@@ -10,19 +10,21 @@ var origamiStages = [], podium;
 
 var globalLight, globalLightOn;
 
-var basicSimpleMaterial, basicTexturedMaterial;
+var basicSimpleMaterial, basicTexturedMaterial, basicPodiumMaterial;
 
-var lambertSimpleMaterial, lambertTexturedMaterial;
+var lambertSimpleMaterial, lambertTexturedMaterial, lambertPodiumMaterial;
 
-var phongSimpleMaterial, phongTexturedMaterial;
+var phongSimpleMaterial, phongTexturedMaterial, phongPodiumMaterial;
 
-var shadingMode,toggleShadingMode;
+var podiumCurrentMaterial, podiumLastMaterial;
 
-var illuminationCalculation, toggleIlluminationCalculation;
+var shadingMode, changedShadingMode;
 
-var perpsectiveCamera, orthographicCamera;
+var illuminationCalculation, changedIlluminationCalculation;
 
-var usingPerspectiveCamera, usingOrthographicCamera, changedCamera;
+var perpsectiveCamera, orthographicCamera, VRPerspectiveCamera;
+
+var usingPerspectiveCamera, usingOrthographicCamera, usingVRPerspectiveCamera, changedCamera;
 
 var timeStopped;
 
@@ -63,43 +65,43 @@ function createPodium(){
     createParallelepiped(podiumWidth, podiumHeight, podiumDepth, 0, 0, 0);
     createParallelepiped(podiumWidth, 2 * podiumHeight / 3, 10, 0, - podiumHeight / 6, podiumDepth / 2 + 5);
     createParallelepiped(podiumWidth, podiumHeight / 3, 10, 0, - podiumHeight / 3, podiumDepth / 2 + 15);
+    podiumCurrentMaterial = lambertPodiumMaterial;
+    podiumLastMaterial = basicPodiumMaterial;
     scene.add(podium);
 }
 
 function createParallelepiped(width, height, depth, x, y, z){
     'use strict';
     
-    const texture = new THREE.TextureLoader().load('https://static.wikia.nocookie.net/planet-texture-maps/images/a/aa/Earth_Texture_Full.png/revision/latest?cb=20190401163425');
-
-    material = new THREE.MeshLambertMaterial({color: "yellow"});
-
     geometry = new THREE.BoxGeometry(width, height, depth);
-    mesh = new THREE.Mesh(geometry, material);
-
+    mesh = new THREE.Mesh(geometry, lambertPodiumMaterial);
     mesh.position.set(x, y, z);
     podium.add(mesh);
 }
 
-function createLamp(x, y, z){
+function createLamp(x, y, z, rotX){
     'use strict';
+
+    const lamp = new THREE.Object3D();
     
-    material = new THREE.MeshBasicMaterial({color: 'cyan'})
+    material = new THREE.MeshBasicMaterial({color: '#6988a3'});
+    material.needsUpdate = true;
     geometry = new THREE.ConeGeometry(5, 10, 14); //radius, height
     mesh = new THREE.Mesh(geometry, material);
 
-    mesh.position.set(x, y, z);
+    lamp.add(mesh);
 
-    mesh.rotateX(Math.PI/10);
-    
-    scene.add(mesh);
-
-    material = new THREE.MeshBasicMaterial({color: 'cyan'});
+    material = new THREE.MeshBasicMaterial({color: '#efdfbb'});
     geometry = new THREE.SphereGeometry(2, 64, 64);
     mesh = new THREE.Mesh(geometry, material);
 
-    mesh.position.set(x, y - 5, z);
+    mesh.position.set(0, - 5, 0);
     
-    scene.add(mesh);
+    lamp.add(mesh);
+
+    lamp.position.set(x, y, z);
+    lamp.rotateX(rotX);
+    scene.add(lamp);
 }
 
 function createPolygon(vertices, material){
@@ -125,7 +127,7 @@ function createOrigamiStage(frontMesh, backMesh, x, y, z){
     origamiStages.push(origamiStage);
     scene.add(spotlightHelper);
     scene.add(origamiStage.origami);
-	createLamp(x, 2*y, 10);
+	createLamp(x, 2*y, 10, Math.PI / 10);
 }
 
 function createFirstStage(){
@@ -258,9 +260,9 @@ function createThirdStage(){
                                  -4.42,        0,   -2.4,
  
                                      // Face E3
-                                   1.58,     3.35,   -0.7,    
-                                  -4.42,        0,   -2.4,~
-                                      0,        0,  -2.98, 
+                                  1.58,     3.35,   -0.7,    
+                                 -4.42,        0,   -2.4,
+                                     0,        0,  -2.98, 
 
                                      // Face F1
                                   1.58,     3.35,    0.7,
@@ -268,7 +270,7 @@ function createThirdStage(){
                                      0,        0,   2.98,
 
                                      // Face F2
-                                  1.58,     3.35,     0.7,
+                                  1.58,     3.35,    0.7,
                                  -4.42,        0,    2.4,
                                     -6,      2.2,      0, 
 
@@ -318,77 +320,72 @@ function createThirdStage(){
                                 -5.51,       2.2,    2.4,
 
                                     // Face M1
-                                -4.5,     12.2,      0, 
-                               -5.51,      2.2,   -2.4,
-                                  -6,      2.2,      0, 
-
-                                    // Face M2
-                                -4.5,      12.2,      0,
-                                  -4,      11.2,   -0.9,
-                               -5.51,       2.2,   -2.4, 
-
-                                    // Face N1
-                               -4.5,      12.2,      0,             
-                                 -6,       2.2,      0,
-                              -5.51,       2.2,    2.4,
-
-                                    // Face N2
-                               -4.5,      12.2,      0,
-                              -5.51,       2.2,    2.4,
-                                 -4,      11.2,    0.9,
-
-                                    // Face O
-                               -4.5,      12.2,      0,
-                                 -4,      11.2,   -0.9,
-                               -8.5,       9.7,      0,
-
-                                    // Face P
-                               -4.5,      12.2,      0,
-                               -8.5,       9.7,      0,
-                                 -4,      11.2,    0.9,
-
-                                // R and Q omited as they seem to be hidden 
-                                  
-                                        
-                                    
-	                           ]);
+                                 -4.5,      12.2,      0, 
+                                -5.51,       2.2,   -2.4,
+                                   -6,       2.2,      0, 
+ 
+                                     // Face M2
+                                 -4.5,      12.2,      0,
+                                   -4,      11.2,   -0.9,
+                                -5.51,       2.2,   -2.4, 
+ 
+                                     // Face N1
+                                 -4.5,      12.2,      0,             
+                                   -6,       2.2,      0,
+                                -5.51,       2.2,    2.4,
+  
+                                      // Face N2
+                                 -4.5,      12.2,      0,
+                                -5.51,       2.2,    2.4,
+                                   -4,      11.2,    0.9,
+  
+                                      // Face O
+                                 -4.5,      12.2,      0,
+                                   -4,      11.2,   -0.9,
+                                 -8.5,       9.7,      0,
+  
+                                      // Face P
+                                 -4.5,      12.2,      0,
+                                 -8.5,       9.7,      0,
+                                   -4,      11.2,    0.9,
+  
+                                  // R and Q omited as they seem to be hidden 
+                                  ]);
     
     let frontMesh = createPolygon(vertices, lambertTexturedMaterial);
 
     vertices = new Float32Array([
-
 									// Face alfa 1
-							    -4.42,        0,   -2.4,    
-                                    4,        0,   -3.5, 
-		                          8.5,      4.4,      0,
+							     -4.42,        0,   -2.4,    
+                                     4,        0,   -3.5, 
+		                           8.5,      4.4,      0,
+ 
+								 	// Face alfa 2
+							     -4.42,        0,   -2.4,    
+		                           8.5,      4.4,      0,
+                                    -6,      2.2,      0, 
+ 
+								 	// Face beta 1
+							     -4.42,        0,    2.4,    
+		                           8.5,      4.4,      0,
+                                     4,        0,    3.5, 
+ 
+								 	// Face beta 2
+							     -4.42,        0,    2.4,    
+                                    -6,      2.2,      0, 
+		                           8.5,      4.4,      0,
+ 
+                                     // Face gamma
+                                  1.58,     3.35,   -0.7,
+                                     4,        0,   -3.5,
+                                     0,        0,  -2.98,
+ 
+                                    // Face delta
+                                  1.58,     3.35,    0.7,
+                                     0,        0,   2.98,
+                                     4,        0,    3.5,        
 
-									// Face alfa 2
-							    -4.42,        0,   -2.4,    
-		                          8.5,      4.4,      0,
-                                   -6,      2.2,      0, 
-
-									// Face beta 1
-							    -4.42,        0,    2.4,    
-		                          8.5,      4.4,      0,
-                                    4,        0,    3.5, 
-
-									// Face beta 2
-							    -4.42,        0,    2.4,    
-                                   -6,      2.2,      0, 
-		                          8.5,      4.4,      0,
-
-                                    // Face gamma
-                                 1.58,     3.35,   -0.7,
-                                    4,        0,   -3.5,
-                                    0,        0,  -2.98,
-
-                                   // Face delta
-                                 1.58,     3.35,    0.7,
-                                    0,        0,   2.98,
-                                    4,        0,    3.5,        
-
-
-								]);
+					                ]);
 
     let backMesh = createPolygon(vertices, lambertSimpleMaterial);
 
@@ -398,7 +395,7 @@ function createThirdStage(){
 function createSpotlight(x, y, z){
     'use strict';
 
-    let spotlight = new THREE.SpotLight(new THREE.Color("white"), 20, 0, Math.PI / 6, 1, 0);
+    let spotlight = new THREE.SpotLight("white", 20, 60, Math.PI / 6, 1, 0);
     spotlight.position.set(x, y, z);
     spotlight.castShadow = true;
     
@@ -413,11 +410,10 @@ function createGlobalLight(){
 
     globalLight = new THREE.DirectionalLight("white", 1);
 
-    globalLight.position.set(50, 100, 35);
+    globalLight.position.set(40, 80, 40);
     globalLight.castShadow = true;
 
     const spotter = new THREE.DirectionalLightHelper(globalLight, 10);
-
     scene.add(spotter);
     scene.add(globalLight);
 }
@@ -427,12 +423,31 @@ function createMaterials(){
     // Texture must be used eventually
     const texture = new THREE.TextureLoader().load('https://static.wikia.nocookie.net/planet-texture-maps/images/a/aa/Earth_Texture_Full.png/revision/latest?cb=20190401163425');
     basicSimpleMaterial = new THREE.MeshBasicMaterial({color: "blue"});
+    basicSimpleMaterial.needsUpdate = true;
+
     basicTexturedMaterial = new THREE.MeshBasicMaterial({color: "red"});
+    basicTexturedMaterial.needsUpdate = true;
+
+    basicPodiumMaterial = new THREE.MeshBasicMaterial({color: "yellow"});
+    basicPodiumMaterial.needsUpdate = true;   
+
     lambertSimpleMaterial = new THREE.MeshLambertMaterial({color: "blue"});
+    lambertSimpleMaterial.needsUpdate = true;
+
     lambertTexturedMaterial = new THREE.MeshLambertMaterial({color: "red"});
+    lambertTexturedMaterial.needsUpdate = true;
+
+    lambertPodiumMaterial = new THREE.MeshLambertMaterial({color: "yellow"});
+    lambertPodiumMaterial.needsUpdate = true;
+
     phongSimpleMaterial = new THREE.MeshPhongMaterial({color: "blue"});
+    phongSimpleMaterial.needsUpdate = true;
+
     phongTexturedMaterial = new THREE.MeshPhongMaterial({color: "red"});
+    phongTexturedMaterial.needsUpdate = true;
     
+    phongPodiumMaterial = new THREE.MeshPhongMaterial({color: "yellow"});
+    phongPodiumMaterial.needsUpdate = true;
 }
 
 function createPerspectiveCamera() {
@@ -442,8 +457,19 @@ function createPerspectiveCamera() {
                                                     1,
                                                     1000);
                                                     
-    perpsectiveCamera.position.set(0, 40, 120);
-    perpsectiveCamera.lookAt(new THREE.Vector3(0, 0, 0));
+    perpsectiveCamera.position.set(0, 40, 150);
+    perpsectiveCamera.lookAt(new THREE.Vector3(0, 20, 0));
+}
+
+function createVRPerspectiveCamera() {
+    'use strict';
+    VRPerspectiveCamera = new THREE.PerspectiveCamera(60,
+                                                      window.innerWidth / window.innerHeight,
+                                                      1,
+                                                      1000);
+                                                    
+    VRPerspectiveCamera.position.set(0,0,0);
+    VRPerspectiveCamera.lookAt(new THREE.Vector3(0, 20, 0));
 }
 
 function createOrthographicCamera() {
@@ -455,8 +481,8 @@ function createOrthographicCamera() {
                                                       - 1000,
                                                       1000);
         
-    orthographicCamera.position.set(0, 0, 50);
-    orthographicCamera.lookAt(new THREE.Vector3(0, 0, 0));
+    orthographicCamera.position.set(0, 30, 30);
+    orthographicCamera.lookAt(new THREE.Vector3(0, 30, 0));
 }
 
 function onResizeOrthographicCamera() {
@@ -490,11 +516,13 @@ function onKeyDown(e) {
         changedCamera = true;
         usingPerspectiveCamera = true;
         usingOrthographicCamera = false;
+        usingVRPerspectiveCamera = false;
     }
     else if (e.keyCode == 50) {  // 2
         changedCamera = true;
         usingPerspectiveCamera = false;
         usingOrthographicCamera = true;
+        usingVRPerspectiveCamera = false;
     }
 
     // Rotate origami figures
@@ -519,14 +547,14 @@ function onKeyDown(e) {
         
     // Shading mode (Lambert or Phong)
     if (e.keyCode == 65 || e.keyCode == 97){ // A, a
-        toggleShadingMode = true;
+        changedShadingMode = true;
         shadingMode = !shadingMode;
     }
         
 
     // Illumination calculation
     if (e.keyCode == 83 || e.keyCode == 115){ // S, s
-        toggleIlluminationCalculation = true;
+        changedIlluminationCalculation = true;
         illuminationCalculation = !illuminationCalculation;
     }  
     
@@ -546,7 +574,7 @@ function onKeyDown(e) {
     if (e.keyCode == 68 || e.keyCode == 100)  // D, d
         globalLightOn = !globalLightOn;
 
-    if (e.keyCode == 70 || e.keyCode == 102)  // F, f
+    if (e.keyCode == 32)                      // Spacebar
         timeStopped = !timeStopped; // What button should we use?
 }
 
@@ -575,8 +603,8 @@ function onKeyUp(e) {
 
 function resetUpdateFlags(){
     'use strict';
-    toggleShadingMode = false;
-    toggleIlluminationCalculation = false;
+    changedShadingMode = false;
+    changedIlluminationCalculation = false;
     timeStopped = false;
     changedCamera = true;
     usingPerspectiveCamera = true;
@@ -590,21 +618,30 @@ function render() {
     renderer.render(scene, camera);
 }
 
+function initRenderer() {
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    // IMPORTANT! For VR to work, the renderer.xr.enabled property must be set to true
+    renderer.xr.enabled = true;  // 
+    document.body.appendChild(renderer.domElement);
+}
+
+function initVR() {
+    document.body.appendChild(VRButton.createButton(renderer));
+}
+
 function init() {
     'use strict';
 
-    renderer = new THREE.WebGLRenderer({
-        antialias: true
-    });
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
+    initRenderer();
     createMaterials();
     createScene();
     resetUpdateFlags();
     createPerspectiveCamera();
     createOrthographicCamera();
+    initVR();
 
     clock = new THREE.Clock();
 
@@ -620,6 +657,8 @@ function chooseCameraMode(){
         camera = perpsectiveCamera;
     else if (usingOrthographicCamera)
         camera = orthographicCamera;
+    else if (usingVRPerspectiveCamera)
+        camera = VRPerspectiveCamera;
 }
 
 function swap(mesh1, mesh2){
@@ -636,56 +675,71 @@ function animate() {
 
     const deltaClock = clock.getDelta();
 
-    if (!timeStopped){
-        const deltaAngle = Math.PI * deltaClock / 2; 
+    const deltaAngle = Math.PI * deltaClock / 2; 
 
-        if (changedCamera){
-            chooseCameraMode();
-            changedCamera = false;
-        }
+    if (changedCamera){
+        chooseCameraMode();
+        changedCamera = false;
+    }
 
-        for (let i = 0; i < origamiStages.length; i++) {
-            let origamiStage = origamiStages[i];
-            origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
+    for (let i = 0; i < origamiStages.length; i++) {
+        let origamiStage = origamiStages[i];
+        origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
+        origamiStage.spotlightHelper.update();
+
+        if (!timeStopped)
             origamiStage.origami.rotateY((origamiStage.increaseAngle - origamiStage.decreaseAngle) * deltaAngle);
-            origamiStage.spotlightHelper.update();
 
-            if (toggleIlluminationCalculation){
-                [origamiStage.frontMesh, origamiStage.frontLastMesh] = swap(origamiStage.frontMesh, origamiStage.frontLastMesh);
-                [origamiStage.backMesh, origamiStage.backLastMesh] = swap(origamiStage.backMesh, origamiStage.backLastMesh);
-                origamiStage.origami.clear();
-                origamiStage.origami.add(origamiStage.frontMesh);
-                origamiStage.origami.add(origamiStage.backMesh);
-            }
-            if (toggleShadingMode && illuminationCalculation){
-                if (shadingMode){
-                    origamiStage.frontMesh.material = lambertTexturedMaterial;
-                    origamiStage.backMesh.material = lambertSimpleMaterial;
-                } else {
-                    origamiStage.frontMesh.material = phongTexturedMaterial;
-                    origamiStage.backMesh.material = phongSimpleMaterial;
-                }
+        if (changedIlluminationCalculation){
+            [origamiStage.frontMesh, origamiStage.frontLastMesh] = swap(origamiStage.frontMesh, origamiStage.frontLastMesh);
+            [origamiStage.backMesh, origamiStage.backLastMesh] = swap(origamiStage.backMesh, origamiStage.backLastMesh);
+            origamiStage.origami.clear();
+            origamiStage.origami.add(origamiStage.frontMesh);
+            origamiStage.origami.add(origamiStage.backMesh);
+        }
+        if (changedShadingMode && illuminationCalculation){
+            if (shadingMode){
+                origamiStage.frontMesh.material = lambertTexturedMaterial;
+                origamiStage.backMesh.material = lambertSimpleMaterial;
+            } else {
+                origamiStage.frontMesh.material = phongTexturedMaterial;
+                origamiStage.backMesh.material = phongSimpleMaterial;
             }
         }
-        
-        if (toggleIlluminationCalculation)
-            toggleIlluminationCalculation = false;
-        
-        if (toggleShadingMode)
-            toggleShadingMode = false;
+    }
 
-        globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
-
-        //firstStage.material = new THREE.MeshBasicMaterial
-        
-        if (timeStopped && deltaClock != 0)
-            clock.stop();
-        if (!timeStopped && deltaClock == 0)
-            clock.start();  
-
-        render();
-
+    if (changedIlluminationCalculation){
+        [podiumCurrentMaterial, podiumLastMaterial] = swap(podiumCurrentMaterial, podiumLastMaterial);
+        for (let i = 0; i < podium.children.length; i++) {
+            const podiumChild = podium.children[i];
+            podiumChild.material = podiumCurrentMaterial;
+        }
+    }
+    if (changedShadingMode && illuminationCalculation){
+        for (let i = 0; i < podium.children.length; i++) {
+            const podiumChild = podium.children[i];
+            podiumChild.material = shadingMode ? lambertPodiumMaterial : phongPodiumMaterial;
+        }
     }
     
+    if (changedIlluminationCalculation)
+        changedIlluminationCalculation = false;
+    
+    if (changedShadingMode)
+        changedShadingMode = false;
+
+    globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
+
+    if (timeStopped)
+        // Show pause message
+
+    if (timeStopped && deltaClock != 0)
+        clock.stop();
+    if (!timeStopped && deltaClock == 0)
+        clock.start();  
+
+    render();
+
+    renderer.setAnimationLoop(animate);
     requestAnimationFrame(animate);
 }
