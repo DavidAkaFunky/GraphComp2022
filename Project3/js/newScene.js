@@ -6,6 +6,8 @@ var material, geometry, mesh, vertices, uvVertices;
 
 var clock;
 
+var text;
+
 var podium;
 
 var globalLight, globalLightOn;
@@ -60,6 +62,7 @@ function createScene() {
     createSecondStage();
     createThirdStage();
     createGlobalLight();
+    createText();
 }
 
 function createPodium(){
@@ -454,6 +457,17 @@ function createGlobalLight(){
     scene.add(globalLight);
 }
 
+function createText(){
+    'use strict';
+
+    
+    text.add(mesh);
+    text.material.transparent = true;
+
+    newscene.add(text);
+
+}
+
 function createMaterials(){
     'use strict';
 
@@ -769,7 +783,7 @@ function animate() {
     globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
 
     if (timeStopped)
-        // Show pause message
+        text.material.transparent = false;
 
     if (timeStopped && deltaClock != 0)
         clock.stop();
