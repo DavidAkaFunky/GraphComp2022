@@ -388,7 +388,7 @@ function createThirdStage(){
                                  -8.5,       9.7,      0,
                                    -4,      11.2,    0.9,
   
-                                  // R and Q omited as they seem to be hidden 
+                                  // R and Q omitted as they seem to be hidden 
                                   ]);
     
     const frontMesh = createPolygon(true, lambertTexturedMaterial);
@@ -515,13 +515,8 @@ function createPerspectiveCamera() {
 
 function createVRPerspectiveCamera() {
     'use strict';
-    VRPerspectiveCamera = new THREE.PerspectiveCamera(60,
-                                                      window.innerWidth / window.innerHeight,
-                                                      1,
-                                                      1000);
-                                                    
-    VRPerspectiveCamera.position.set(0, 0, 0);
-    VRPerspectiveCamera.lookAt(new THREE.Vector3(0, 20, 0));
+    VRPerspectiveCamera = new THREE.StereoCamera();
+    VRPerspectiveCamera.update(perpsectiveCamera);
 }
 
 function createOrthographicCamera() {
@@ -564,13 +559,13 @@ function onKeyDown(e) {
     'use strict';
 
     // Choose camera
-    if (e.keyCode == 49) {                    // 1
+    if (e.keyCode == 49 && !usingVRPerspectiveCamera) {                    // 1
         changedCamera = true;
         usingPerspectiveCamera = true;
         usingOrthographicCamera = false;
         usingVRPerspectiveCamera = false;
     }
-    else if (e.keyCode == 50) {               // 2
+    else if (e.keyCode == 50 && !usingVRPerspectiveCamera) {               // 2
         changedCamera = true;
         usingPerspectiveCamera = false;
         usingOrthographicCamera = true;
@@ -578,7 +573,7 @@ function onKeyDown(e) {
     }
 
     // Reset scene
-    if (e.keyCode == 51)                      // 3
+    if (e.keyCode == 51 && timeStopped)                      // 3
         reset = true;
 
     // Rotate origami figures
@@ -666,6 +661,8 @@ function resetUpdateFlags(){
     reset = false;
     changedCamera = true;
     usingPerspectiveCamera = true;
+    usingOrthographicCamera = false;
+    usingVRPerspectiveCamera = false;
     shadingMode = true;
     illuminationCalculation = true;
     globalLightOn = true;
@@ -698,6 +695,7 @@ function init() {
     createScene();
     resetUpdateFlags();
     createPerspectiveCamera();
+    createVRPerspectiveCamera();
     createOrthographicCamera();
     initVR();
 
@@ -735,7 +733,7 @@ function animate() {
 
     const deltaAngle = Math.PI * deltaClock / 2; 
 
-    if (timeStopped && reset)
+    if (reset)
         resetScene();
 
     else{
@@ -791,8 +789,6 @@ function animate() {
             changedShadingMode = false;
     
         globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
-    
-        if (timeStopped)
         
         if (timeStopped && deltaClock != 0){
             clock.stop();
@@ -805,7 +801,6 @@ function animate() {
         }
     }
       
-
     render();
 
     if (usingVRPerspectiveCamera)
