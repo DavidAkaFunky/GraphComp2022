@@ -6,6 +6,8 @@ var material, geometry, mesh, vertices, uvVertices;
 
 var clock;
 
+var text;
+
 var podium;
 
 var globalLight, globalLightOn;
@@ -26,11 +28,11 @@ var perpsectiveCamera, orthographicCamera, VRPerspectiveCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, usingVRPerspectiveCamera, changedCamera;
 
-var timeStopped;
+var timeStopped, reset;
 
-const origamiStages = [];
+var origamiStages = [];
 
-const sheetDiagonal = 21*Math.SQRT2;
+const sheetDiagonal = 21 * Math.SQRT2;
 
 const podiumWidth = 150, podiumHeight = 30, podiumDepth = 100;
 
@@ -60,6 +62,7 @@ function createScene() {
     createSecondStage();
     createThirdStage();
     createGlobalLight();
+    createText();
 }
 
 function createPodium(){
@@ -385,7 +388,7 @@ function createThirdStage(){
                                  -8.5,       9.7,      0,
                                    -4,      11.2,    0.9,
   
-                                  // R and Q omited as they seem to be hidden 
+                                  // R and Q omitted as they seem to be hidden 
                                   ]);
 
     uvVertices = new Float32Array([
@@ -597,6 +600,17 @@ function createGlobalLight(){
     scene.add(globalLight);
 }
 
+function createText(){
+    const texture = new THREE.TextureLoader().load('textures/text.svg');
+    const material = new THREE.MeshBasicMaterial({map: texture});
+    text = new THREE.Mesh(new THREE.PlaneGeometry(100, 40), material);
+    text.position.set(0, 20, 80);
+    text.material.transparent = true;
+    text.material.needsUpdate = true;
+    text.material.opacity = 0;
+    scene.add(text);
+}
+
 function createMaterials(){
     'use strict';
 
@@ -644,13 +658,8 @@ function createPerspectiveCamera() {
 
 function createVRPerspectiveCamera() {
     'use strict';
-    VRPerspectiveCamera = new THREE.PerspectiveCamera(60,
-                                                      window.innerWidth / window.innerHeight,
-                                                      1,
-                                                      1000);
-                                                    
-    VRPerspectiveCamera.position.set(0,0,0);
-    VRPerspectiveCamera.lookAt(new THREE.Vector3(0, 20, 0));
+    VRPerspectiveCamera = new THREE.StereoCamera();
+    VRPerspectiveCamera.update(perpsectiveCamera);
 }
 
 function createOrthographicCamera() {
@@ -662,8 +671,8 @@ function createOrthographicCamera() {
                                                       - 1000,
                                                       1000);
         
-    orthographicCamera.position.set(0, 30, 30);
-    orthographicCamera.lookAt(new THREE.Vector3(0, 30, 0));
+    orthographicCamera.position.set(0, 40, 60);
+    orthographicCamera.lookAt(new THREE.Vector3(0, 20, 0));
 }
 
 function onResizeOrthographicCamera() {
@@ -693,18 +702,22 @@ function onKeyDown(e) {
     'use strict';
 
     // Choose camera
-    if (e.keyCode == 49) {  // 1
+    if (e.keyCode == 49 && !usingVRPerspectiveCamera) {                    // 1
         changedCamera = true;
         usingPerspectiveCamera = true;
         usingOrthographicCamera = false;
         usingVRPerspectiveCamera = false;
     }
-    else if (e.keyCode == 50) {  // 2
+    else if (e.keyCode == 50 && !usingVRPerspectiveCamera) {               // 2
         changedCamera = true;
         usingPerspectiveCamera = false;
         usingOrthographicCamera = true;
         usingVRPerspectiveCamera = false;
     }
+
+    // Reset scene
+    if (e.keyCode == 51 && timeStopped)                      // 3
+        reset = true;
 
     // Rotate origami figures
     if (e.keyCode == 81 || e.keyCode == 113)  // Q, q
@@ -727,7 +740,7 @@ function onKeyDown(e) {
 
         
     // Shading mode (Lambert or Phong)
-    if (e.keyCode == 65 || e.keyCode == 97){ // A, a
+    if (e.keyCode == 65 || e.keyCode == 97){  // A, a
         changedShadingMode = true;
         shadingMode = !shadingMode;
     }
@@ -756,7 +769,8 @@ function onKeyDown(e) {
         globalLightOn = !globalLightOn;
 
     if (e.keyCode == 32)                      // Spacebar
-        timeStopped = !timeStopped; // What button should we use?
+        timeStopped = !timeStopped;
+
 }
 
 function onKeyUp(e) {
@@ -787,8 +801,11 @@ function resetUpdateFlags(){
     changedShadingMode = false;
     changedIlluminationCalculation = false;
     timeStopped = false;
+    reset = false;
     changedCamera = true;
     usingPerspectiveCamera = true;
+    usingOrthographicCamera = false;
+    usingVRPerspectiveCamera = false;
     shadingMode = true;
     illuminationCalculation = true;
     globalLightOn = true;
@@ -821,6 +838,7 @@ function init() {
     createScene();
     resetUpdateFlags();
     createPerspectiveCamera();
+    createVRPerspectiveCamera();
     createOrthographicCamera();
     initVR();
 
@@ -829,6 +847,15 @@ function init() {
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("resize", onResize);
+}
+
+function resetScene(){
+    'use strict';
+    //Reset scene
+    scene.clear();
+    origamiStages = [];
+    createScene();
+    resetUpdateFlags();
 }
 
 function chooseCameraMode(){
@@ -842,15 +869,6 @@ function chooseCameraMode(){
         camera = VRPerspectiveCamera;
 }
 
-function swap(mesh1, mesh2){
-    'use strict';
-
-    const tempMesh = mesh1;
-    mesh1 = mesh2;
-    mesh2 = tempMesh;
-    return [mesh1, mesh2];
-}
-
 function animate() {
     'use strict';
 
@@ -858,67 +876,74 @@ function animate() {
 
     const deltaAngle = Math.PI * deltaClock / 2; 
 
-    if (changedCamera){
-        chooseCameraMode();
-        changedCamera = false;
-    }
+    if (reset)
+        resetScene();
 
-    for (let i = 0; i < origamiStages.length; i++) {
-        const origamiStage = origamiStages[i];
-        origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
-        origamiStage.spotlightHelper.update();
-
-        if (!timeStopped)
-            origamiStage.origami.rotateY((origamiStage.increaseAngle - origamiStage.decreaseAngle) * deltaAngle);
-
-        if (changedIlluminationCalculation){
-            [origamiStage.frontMesh, origamiStage.frontLastMesh] = swap(origamiStage.frontMesh, origamiStage.frontLastMesh);
-            [origamiStage.backMesh, origamiStage.backLastMesh] = swap(origamiStage.backMesh, origamiStage.backLastMesh);
-            origamiStage.origami.clear();
-            origamiStage.origami.add(origamiStage.frontMesh);
-            origamiStage.origami.add(origamiStage.backMesh);
+    else{
+        if (changedCamera){
+            chooseCameraMode();
+            changedCamera = false;
         }
-        if (changedShadingMode && illuminationCalculation){
-            if (shadingMode){
-                origamiStage.frontMesh.material = lambertTexturedMaterial;
-                origamiStage.backMesh.material = lambertSimpleMaterial;
-            } else {
-                origamiStage.frontMesh.material = phongTexturedMaterial;
-                origamiStage.backMesh.material = phongSimpleMaterial;
+    
+        for (let i = 0; i < origamiStages.length; i++) {
+            const origamiStage = origamiStages[i];
+            origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
+            origamiStage.spotlightHelper.update();
+    
+            if (!timeStopped)
+                origamiStage.origami.rotateY((origamiStage.increaseAngle - origamiStage.decreaseAngle) * deltaAngle);
+    
+            if (changedIlluminationCalculation){
+                [origamiStage.frontMesh, origamiStage.frontLastMesh] = [origamiStage.frontLastMesh, origamiStage.frontMesh];
+                [origamiStage.backMesh, origamiStage.backLastMesh] = [origamiStage.backLastMesh, origamiStage.backMesh];
+                origamiStage.origami.clear();
+                origamiStage.origami.add(origamiStage.frontMesh);
+                origamiStage.origami.add(origamiStage.backMesh);
+            }
+            if (changedShadingMode && illuminationCalculation){
+                if (shadingMode){
+                    origamiStage.frontMesh.material = lambertTexturedMaterial;
+                    origamiStage.backMesh.material = lambertSimpleMaterial;
+                } else {
+                    origamiStage.frontMesh.material = phongTexturedMaterial;
+                    origamiStage.backMesh.material = phongSimpleMaterial;
+                }
             }
         }
-    }
-
-    if (changedIlluminationCalculation){
-        [podiumCurrentMaterial, podiumLastMaterial] = swap(podiumCurrentMaterial, podiumLastMaterial);
-        for (let i = 0; i < podium.children.length; i++) {
-            const podiumChild = podium.children[i];
-            podiumChild.material = podiumCurrentMaterial;
+    
+        if (changedIlluminationCalculation){
+            [podiumCurrentMaterial, podiumLastMaterial] = [podiumLastMaterial, podiumCurrentMaterial];
+            for (let i = 0; i < podium.children.length; i++) {
+                const podiumChild = podium.children[i];
+                podiumChild.material = podiumCurrentMaterial;
+            }
+        }
+        if (changedShadingMode && illuminationCalculation){
+            for (let i = 0; i < podium.children.length; i++) {
+                const podiumChild = podium.children[i];
+                podiumChild.material = shadingMode ? lambertPodiumMaterial : phongPodiumMaterial;
+            }
+        }
+        
+        if (changedIlluminationCalculation)
+            changedIlluminationCalculation = false;
+        
+        if (changedShadingMode)
+            changedShadingMode = false;
+    
+        globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
+        
+        if (timeStopped && deltaClock != 0){
+            clock.stop();
+            text.material.opacity = 1;
+        }
+            
+        if (!timeStopped && deltaClock == 0){
+            clock.start();
+            text.material.opacity = 0;
         }
     }
-    if (changedShadingMode && illuminationCalculation){
-        for (let i = 0; i < podium.children.length; i++) {
-            const podiumChild = podium.children[i];
-            podiumChild.material = shadingMode ? lambertPodiumMaterial : phongPodiumMaterial;
-        }
-    }
-    
-    if (changedIlluminationCalculation)
-        changedIlluminationCalculation = false;
-    
-    if (changedShadingMode)
-        changedShadingMode = false;
-
-    globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
-
-    if (timeStopped)
-        // Show pause message
-
-    if (timeStopped && deltaClock != 0)
-        clock.stop();
-    if (!timeStopped && deltaClock == 0)
-        clock.start();  
-
+      
     render();
 
     if (usingVRPerspectiveCamera)
