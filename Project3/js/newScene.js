@@ -32,7 +32,7 @@ var timeStopped, reset;
 
 var origamiStages = [];
 
-const sheetDiagonal = 21*Math.SQRT2;
+const sheetDiagonal = 21 * Math.SQRT2;
 
 const podiumWidth = 150, podiumHeight = 30, podiumDepth = 100;
 
