@@ -6,8 +6,6 @@ var material, geometry, mesh, vertices, uvVertices;
 
 var clock;
 
-var text;
-
 var podium;
 
 var globalLight, globalLightOn;
@@ -28,9 +26,9 @@ var perpsectiveCamera, orthographicCamera, VRPerspectiveCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, usingVRPerspectiveCamera, changedCamera;
 
-var timeStopped;
+var timeStopped, reset;
 
-const origamiStages = [];
+var origamiStages = [];
 
 const sheetDiagonal = 21*Math.SQRT2;
 
@@ -458,13 +456,7 @@ function createGlobalLight(){
 }
 
 function createText(){
-    'use strict';
-
-    
-    text.add(mesh);
-    text.material.transparent = true;
-
-    newscene.add(text);
+    //TODO
 
 }
 
@@ -598,7 +590,7 @@ function onKeyDown(e) {
 
         
     // Shading mode (Lambert or Phong)
-    if (e.keyCode == 65 || e.keyCode == 97){ // A, a
+    if (e.keyCode == 65 || e.keyCode == 97){  // A, a
         changedShadingMode = true;
         shadingMode = !shadingMode;
     }
@@ -627,7 +619,10 @@ function onKeyDown(e) {
         globalLightOn = !globalLightOn;
 
     if (e.keyCode == 32)                      // Spacebar
-        timeStopped = !timeStopped; // What button should we use?
+        timeStopped = !timeStopped;
+
+    if (e.keyCode == 51)       // 3
+        reset = true;
 }
 
 function onKeyUp(e) {
@@ -658,6 +653,7 @@ function resetUpdateFlags(){
     changedShadingMode = false;
     changedIlluminationCalculation = false;
     timeStopped = false;
+    reset = false;
     changedCamera = true;
     usingPerspectiveCamera = true;
     shadingMode = true;
@@ -722,6 +718,15 @@ function swap(mesh1, mesh2){
     return [mesh1, mesh2];
 }
 
+function resetScene(){
+    'use strict';
+    //Reset scene
+    scene.clear();
+    origamiStages = [];
+    createScene();
+    resetUpdateFlags();
+}
+
 function animate() {
     'use strict';
 
@@ -729,66 +734,72 @@ function animate() {
 
     const deltaAngle = Math.PI * deltaClock / 2; 
 
-    if (changedCamera){
-        chooseCameraMode();
-        changedCamera = false;
-    }
+    if (timeStopped && reset)
+        resetScene();
 
-    for (let i = 0; i < origamiStages.length; i++) {
-        const origamiStage = origamiStages[i];
-        origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
-        origamiStage.spotlightHelper.update();
-
-        if (!timeStopped)
-            origamiStage.origami.rotateY((origamiStage.increaseAngle - origamiStage.decreaseAngle) * deltaAngle);
-
-        if (changedIlluminationCalculation){
-            [origamiStage.frontMesh, origamiStage.frontLastMesh] = swap(origamiStage.frontMesh, origamiStage.frontLastMesh);
-            [origamiStage.backMesh, origamiStage.backLastMesh] = swap(origamiStage.backMesh, origamiStage.backLastMesh);
-            origamiStage.origami.clear();
-            origamiStage.origami.add(origamiStage.frontMesh);
-            origamiStage.origami.add(origamiStage.backMesh);
+    else{
+        if (changedCamera){
+            chooseCameraMode();
+            changedCamera = false;
         }
-        if (changedShadingMode && illuminationCalculation){
-            if (shadingMode){
-                origamiStage.frontMesh.material = lambertTexturedMaterial;
-                origamiStage.backMesh.material = lambertSimpleMaterial;
-            } else {
-                origamiStage.frontMesh.material = phongTexturedMaterial;
-                origamiStage.backMesh.material = phongSimpleMaterial;
+    
+        for (let i = 0; i < origamiStages.length; i++) {
+            const origamiStage = origamiStages[i];
+            origamiStage.spotlightOn ? origamiStage.spotlight.intensity = 1 : origamiStage.spotlight.intensity = 0;
+            origamiStage.spotlightHelper.update();
+    
+            if (!timeStopped)
+                origamiStage.origami.rotateY((origamiStage.increaseAngle - origamiStage.decreaseAngle) * deltaAngle);
+    
+            if (changedIlluminationCalculation){
+                [origamiStage.frontMesh, origamiStage.frontLastMesh] = swap(origamiStage.frontMesh, origamiStage.frontLastMesh);
+                [origamiStage.backMesh, origamiStage.backLastMesh] = swap(origamiStage.backMesh, origamiStage.backLastMesh);
+                origamiStage.origami.clear();
+                origamiStage.origami.add(origamiStage.frontMesh);
+                origamiStage.origami.add(origamiStage.backMesh);
+            }
+            if (changedShadingMode && illuminationCalculation){
+                if (shadingMode){
+                    origamiStage.frontMesh.material = lambertTexturedMaterial;
+                    origamiStage.backMesh.material = lambertSimpleMaterial;
+                } else {
+                    origamiStage.frontMesh.material = phongTexturedMaterial;
+                    origamiStage.backMesh.material = phongSimpleMaterial;
+                }
             }
         }
-    }
-
-    if (changedIlluminationCalculation){
-        [podiumCurrentMaterial, podiumLastMaterial] = swap(podiumCurrentMaterial, podiumLastMaterial);
-        for (let i = 0; i < podium.children.length; i++) {
-            const podiumChild = podium.children[i];
-            podiumChild.material = podiumCurrentMaterial;
-        }
-    }
-    if (changedShadingMode && illuminationCalculation){
-        for (let i = 0; i < podium.children.length; i++) {
-            const podiumChild = podium.children[i];
-            podiumChild.material = shadingMode ? lambertPodiumMaterial : phongPodiumMaterial;
-        }
-    }
     
-    if (changedIlluminationCalculation)
-        changedIlluminationCalculation = false;
+        if (changedIlluminationCalculation){
+            [podiumCurrentMaterial, podiumLastMaterial] = swap(podiumCurrentMaterial, podiumLastMaterial);
+            for (let i = 0; i < podium.children.length; i++) {
+                const podiumChild = podium.children[i];
+                podiumChild.material = podiumCurrentMaterial;
+            }
+        }
+        if (changedShadingMode && illuminationCalculation){
+            for (let i = 0; i < podium.children.length; i++) {
+                const podiumChild = podium.children[i];
+                podiumChild.material = shadingMode ? lambertPodiumMaterial : phongPodiumMaterial;
+            }
+        }
+        
+        if (changedIlluminationCalculation)
+            changedIlluminationCalculation = false;
+        
+        if (changedShadingMode)
+            changedShadingMode = false;
     
-    if (changedShadingMode)
-        changedShadingMode = false;
-
-    globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
-
-    if (timeStopped)
-        text.material.transparent = false;
-
-    if (timeStopped && deltaClock != 0)
-        clock.stop();
-    if (!timeStopped && deltaClock == 0)
-        clock.start();  
+        globalLightOn ? globalLight.intensity = 1 : globalLight.intensity = 0;
+    
+        //if (timeStopped)
+        //    text.material.transparent = false;
+    
+        if (timeStopped && deltaClock != 0)
+            clock.stop();
+        if (!timeStopped && deltaClock == 0)
+            clock.start();
+    }
+      
 
     render();
 
