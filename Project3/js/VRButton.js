@@ -23,6 +23,7 @@ class VRButton {
 
 				currentSession = session;
 
+				changedCamera = true;
                 usingPerspectiveCamera = false;
                 usingOrthographicCamera = false;
                 usingVRPerspectiveCamera = true;
@@ -36,6 +37,7 @@ class VRButton {
 
 				currentSession = null;
 
+				changedCamera = true;
                 usingPerspectiveCamera = true;
                 usingOrthographicCamera = false;
                 usingVRPerspectiveCamera = false;

@@ -26,7 +26,7 @@ var illuminationCalculation, changedIlluminationCalculation;
 
 var VRCameraGroup;
 
-var perpsectiveCamera, orthographicCamera, VRPerspectiveCamera;
+var perspectiveCamera, orthographicCamera, VRPerspectiveCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, usingVRPerspectiveCamera, changedCamera;
 
@@ -143,29 +143,29 @@ function createFirstStage(){
     'use strict';
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
-                                 sheetDiagonal / 2, 0, 1,
+                                 Math.sqrt((sheetDiagonal / 2)**2 + 2**2), 0, 1,
                                  0, sheetDiagonal / 2, -1,
  
                                  0, sheetDiagonal / 2, -1,
-                                 - sheetDiagonal / 2, 0, 1,
+                                 - Math.sqrt((sheetDiagonal / 2)**2 + 2**2), 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
 
-    uvVertices = new Float32Array([0, 0,
-                                   0, 1,
+    uvVertices = new Float32Array([0, 1,
+                                   1, 1,
                                    1, 0,
                                     
                                    1, 0,
-                                   1, 1,
-                                   0, 0]);
+                                   0, 0,
+                                   0, 1]);
     
     const frontMesh = createPolygon(true, lambertTexturedMaterial);
 
     vertices = new Float32Array([0, - sheetDiagonal / 2, -1,
-                                 - sheetDiagonal / 2, 0, 1,
+                                 - Math.sqrt((sheetDiagonal / 2)**2 + 2**2), 0, 1,
                                  0, sheetDiagonal / 2, -1,
                                  
                                  0, sheetDiagonal / 2, -1,
-                                 sheetDiagonal / 2, 0, 1,
+                                 Math.sqrt((sheetDiagonal / 2)**2 + 2**2), 0, 1,
                                  0, - sheetDiagonal / 2, -1]);
 
     const backMesh = createPolygon(false, lambertSimpleMaterial);
@@ -649,24 +649,28 @@ function createMaterials(){
 
 function createPerspectiveCamera() {
     'use strict';
-    perpsectiveCamera = new THREE.PerspectiveCamera(60,
+    perspectiveCamera = new THREE.PerspectiveCamera(60,
                                                     window.innerWidth / window.innerHeight,
                                                     1,
                                                     1000);
                                                     
-    perpsectiveCamera.position.set(0, 40, 150);
-    perpsectiveCamera.lookAt(new THREE.Vector3(0, 20, 0));
+    perspectiveCamera.position.set(0, 40, 150);
+    perspectiveCamera.lookAt(new THREE.Vector3(0, 20, 0));
 }
 
 function createVRPerspectiveCamera() {
     'use strict';
-    VRPerspectiveCamera = new THREE.StereoCamera();
-    VRPerspectiveCamera.update(perpsectiveCamera);
+    VRPerspectiveCamera = new THREE.PerspectiveCamera(60,
+                                                      window.innerWidth / window.innerHeight,
+                                                      1,
+                                                      1000);
+            
+    VRPerspectiveCamera.lookAt(new THREE.Vector3(0, 20, 0));
 
     VRCameraGroup = new THREE.Group();
     VRCameraGroup.position.set(0, 40, 150);  // Set the initial VR Headset Position.
-
-
+    
+    scene.add(VRCameraGroup);
 }
 
 function createOrthographicCamera() {
@@ -707,15 +711,15 @@ function onResize() {
 
 function onKeyDown(e) {
     'use strict';
-
+    
     // Choose camera
-    if (e.keyCode == 49 && !usingVRPerspectiveCamera) {                    // 1
+    if (e.keyCode == 49 && !usingVRPerspectiveCamera) {      // 1
         changedCamera = true;
         usingPerspectiveCamera = true;
         usingOrthographicCamera = false;
         usingVRPerspectiveCamera = false;
     }
-    else if (e.keyCode == 50 && !usingVRPerspectiveCamera) {               // 2
+    else if (e.keyCode == 50 && !usingVRPerspectiveCamera) { // 2
         changedCamera = true;
         usingPerspectiveCamera = false;
         usingOrthographicCamera = true;
@@ -867,13 +871,14 @@ function resetScene(){
 
 function chooseCameraMode(){
     'use strict';
-
     if (usingPerspectiveCamera)
-        camera = perpsectiveCamera;
+        camera = perspectiveCamera;
     else if (usingOrthographicCamera)
         camera = orthographicCamera;
-    else if (usingVRPerspectiveCamera)
+    else if (usingVRPerspectiveCamera){
         camera = VRPerspectiveCamera;
+        VRCameraGroup.add(camera); 
+    }
 }
 
 function animate() {
@@ -882,7 +887,7 @@ function animate() {
     const deltaClock = clock.getDelta();
 
     const deltaAngle = Math.PI * deltaClock / 2; 
-
+    
     if (reset)
         resetScene();
 
@@ -953,12 +958,8 @@ function animate() {
       
     render();
 
-    if (usingVRPerspectiveCamera){
-        scene.add(VRCameraGroup);
-        VRCameraGroup.add(camera);        
+    if (usingVRPerspectiveCamera)
         renderer.setAnimationLoop(animate);
-    }
-
     else
         requestAnimationFrame(animate);
 }
