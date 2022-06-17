@@ -24,6 +24,8 @@ var shadingMode, changedShadingMode;
 
 var illuminationCalculation, changedIlluminationCalculation;
 
+var VRCameraGroup;
+
 var perpsectiveCamera, orthographicCamera, VRPerspectiveCamera;
 
 var usingPerspectiveCamera, usingOrthographicCamera, usingVRPerspectiveCamera, changedCamera;
@@ -660,6 +662,11 @@ function createVRPerspectiveCamera() {
     'use strict';
     VRPerspectiveCamera = new THREE.StereoCamera();
     VRPerspectiveCamera.update(perpsectiveCamera);
+
+    VRCameraGroup = new THREE.Group();
+    VRCameraGroup.position.set(0, 40, 150);  // Set the initial VR Headset Position.
+
+
 }
 
 function createOrthographicCamera() {
@@ -946,8 +953,12 @@ function animate() {
       
     render();
 
-    if (usingVRPerspectiveCamera)
+    if (usingVRPerspectiveCamera){
+        scene.add(VRCameraGroup);
+        VRCameraGroup.add(camera);        
         renderer.setAnimationLoop(animate);
+    }
+
     else
         requestAnimationFrame(animate);
 }
