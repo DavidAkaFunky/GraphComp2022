@@ -601,7 +601,7 @@ function createGlobalLight(){
 }
 
 function createText(){
-    const texture = new THREE.TextureLoader().load('textures/text.svg');
+    const texture = new THREE.TextureLoader().load('textures/text.png');
     const material = new THREE.MeshBasicMaterial({map: texture});
     text = new THREE.Mesh(new THREE.PlaneGeometry(100, 40), material);
     text.position.set(0, 20, 80);
