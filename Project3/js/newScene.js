@@ -775,7 +775,7 @@ function onKeyDown(e) {
     if (e.keyCode == 68 || e.keyCode == 100)  // D, d
         globalLightOn = !globalLightOn;
 
-    if (e.keyCode == 32)                      // Spacebar
+    if (e.keyCode == 32 && !usingVRPerspectiveCamera)    // Spacebar HELP DB
         timeStopped = !timeStopped;
 
 }
